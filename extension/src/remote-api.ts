@@ -13,10 +13,13 @@ export function normalizeApiUrl(raw: string): string {
   if (parsed.search || parsed.hash) {
     throw new Error("API URL must not contain a query string or fragment.");
   }
+  if (parsed.pathname !== "/") {
+    throw new Error("Enter the API origin only; /v1/classify is appended automatically.");
+  }
   if (parsed.protocol === "http:" && !LOOPBACK_HOSTS.has(parsed.hostname.toLowerCase())) {
     throw new Error("Non-local API URLs must use HTTPS.");
   }
-  return parsed.href.replace(/\/+$/, "");
+  return parsed.origin;
 }
 
 export function apiPermissionPattern(raw: string): string {
