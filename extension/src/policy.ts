@@ -28,7 +28,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
 
 const patterns: Record<Category, RegExp[]> = {
   harassment: [
-    /\b(?:you are|you're) (?:a )?(?:moron|idiot|loser)\b/i,
+    /\b(?:you are|you're) (?:a|an) (?:moron|idiot|loser)\b/i,
     /\b(?:shut up|you are pathetic)\b/i
   ],
   hate: [
