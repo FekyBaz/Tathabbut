@@ -4,7 +4,7 @@ from tathabbut_api.schemas import Category, ClassifyRequest, ClassifyResponse, L
 
 PATTERNS: dict[Category, tuple[re.Pattern[str], ...]] = {
     "harassment": (
-        re.compile(r"\b(?:you are|you're) (?:a )?(?:moron|idiot|loser)\b", re.IGNORECASE),
+        re.compile(r"\b(?:you are|you're) (?:a|an) (?:moron|idiot|loser)\b", re.IGNORECASE),
         re.compile(r"\b(?:shut up|you are pathetic)\b", re.IGNORECASE),
     ),
     "hate": (
