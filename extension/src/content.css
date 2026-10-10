@@ -1,0 +1,21 @@
+.tathabbut-hidden {
+  position: relative !important;
+  max-height: 3.25rem !important;
+  overflow: hidden !important;
+  opacity: 0.28 !important;
+  filter: blur(3px);
+}
+.tathabbut-reveal {
+  position: relative;
+  z-index: 2147483647;
+  margin: 0.25rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  background: Canvas;
+  color: CanvasText;
+  font: inherit;
+  filter: none;
+  opacity: 1;
+  cursor: pointer;
+}
