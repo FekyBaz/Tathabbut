@@ -54,15 +54,14 @@ byId<HTMLButtonElement>("save").addEventListener("click", async () => {
     // Request permission directly from the save click before any asynchronous storage calls.
     if (normalizedUrl) {
       newPermission = apiPermissionPattern(normalizedUrl);
-      const alreadyGranted = await chrome.permissions.contains({ origins: [newPermission] });
-      if (!alreadyGranted) {
-        const granted = await chrome.permissions.request({ origins: [newPermission] });
-        if (!granted) {
-          status.textContent = "API permission was not granted. Settings were not changed.";
-          return;
-        }
-        permissionWasNewlyGranted = true;
+      // Start the permission check, but invoke request before yielding so it remains tied to the Save click.
+      const wasGranted = chrome.permissions.contains({ origins: [newPermission] });
+      const granted = await chrome.permissions.request({ origins: [newPermission] });
+      if (!granted) {
+        status.textContent = "API permission was not granted. Settings were not changed.";
+        return;
       }
+      permissionWasNewlyGranted = !(await wasGranted);
     }
 
     const stored = await chrome.storage.sync.get("tathabbutSettings");
@@ -85,7 +84,11 @@ byId<HTMLButtonElement>("save").addEventListener("click", async () => {
     if (oldUrl) {
       const oldPermission = apiPermissionPattern(oldUrl);
       if (oldPermission !== newPermission) {
-        await chrome.permissions.remove({ origins: [oldPermission] });
+        try {
+          await chrome.permissions.remove({ origins: [oldPermission] });
+        } catch {
+          // Settings are already saved; failure to revoke the old optional grant is non-fatal.
+        }
       }
     }
     status.textContent = normalizedUrl
