@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tathabbut settings</title>
+    <style>
+      body { width: 320px; margin: 0; padding: 16px; font: 14px/1.45 system-ui, sans-serif; }
+      h1 { margin: 0 0 2px; font-size: 18px; }
+      .muted { color: #5b6470; margin: 0 0 16px; }
+      label { display: block; margin: 10px 0; }
+      input[type="url"] { box-sizing: border-box; width: 100%; padding: 8px; }
+      input[type="range"] { width: 100%; }
+      button { padding: 8px 12px; cursor: pointer; }
+      .row { display: flex; align-items: center; gap: 8px; }
+      #status { min-height: 1.4em; }
+      fieldset { border: 1px solid #c6cbd1; border-radius: 8px; margin: 12px 0; }
+    </style>
+  </head>
+  <body>
+    <h1>Tathabbut <span lang="ar">تثبّت</span></h1>
+    <p class="muted">Hide locally. Restore anytime.</p>
+    <label class="row"><input id="enabled" type="checkbox" /> Enable filtering</label>
+    <fieldset>
+      <legend>Filter categories</legend>
+      <label><input type="checkbox" name="category" value="harassment" /> Personal insults / harassment</label>
+      <label><input type="checkbox" name="category" value="hate" /> Hateful or dehumanizing attacks</label>
+      <label><input type="checkbox" name="category" value="threats" /> Threats of violence</label>
+      <label><input type="checkbox" name="category" value="spam" /> Spam</label>
+    </fieldset>
+    <label for="threshold">Confidence threshold: <strong id="thresholdValue">85%</strong></label>
+    <input id="threshold" type="range" min="50" max="99" value="85" />
+    <label for="apiUrl">Optional self-hosted API URL</label>
+    <input id="apiUrl" type="url" placeholder="http://127.0.0.1:8000" autocomplete="off" />
+    <p class="muted">Leave blank for local-only mode. Never paste provider API keys here.</p>
+    <button id="save" type="button">Save settings</button>
+    <p id="status" role="status" aria-live="polite"></p>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
