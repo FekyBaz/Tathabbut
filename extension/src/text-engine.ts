@@ -1,5 +1,5 @@
 export function normalizeText(text: string): string {
-  return text.replace(/\\s+/g, " ").trim();
+  return text.replace(/\s+/g, " ").trim();
 }
 
 /** Small stable fingerprint for deduplication; not a security hash. */
@@ -45,7 +45,7 @@ export class BoundedTaskQueue {
       const task = this.pending.shift();
       if (!task) continue;
       this.active += 1;
-      void task().catch(() => {
+      void Promise.resolve().then(task).catch(() => {
         // A single failed classification must not stop later work.
       }).finally(() => {
         this.active -= 1;
