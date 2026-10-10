@@ -22,11 +22,50 @@ def test_classify_direct_insult() -> None:
     assert body["labels"][0]["category"] == "harassment"
 
 
+def test_classify_arabic_direct_insult() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "إنتَ غَبِي", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_classify_arabic_threat() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "هقتلك", "enabled_categories": ["threats"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "threats"
+
+
+def test_classify_arabic_spam() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "مبروك كسبت الجائزة", "enabled_categories": ["spam"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "spam"
+
+
 def test_respectful_criticism_is_not_flagged() -> None:
     response = client.post(
         "/v1/classify",
         json={
             "text": "I disagree with this policy and think it should change.",
+            "enabled_categories": ["harassment", "hate", "threats", "spam"],
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"] == []
+
+
+def test_respectful_arabic_criticism_is_not_flagged() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={
+            "text": "أنا مختلف مع القرار وأعتقد أنه يحتاج إلى تغيير.",
             "enabled_categories": ["harassment", "hate", "threats", "spam"],
         },
     )
