@@ -13,6 +13,6 @@ uvicorn tathabbut_api.main:app --reload
 
 Endpoints: `GET /health`, `POST /v1/classify`.
 
-CORS is disabled unless `TATHABBUT_ALLOWED_ORIGINS` is explicitly set to a comma-separated allowlist.
+CORS is disabled unless `TATHABBUT_ALLOWED_ORIGINS` is explicitly set to a comma-separated allowlist. The API is not production-hardened: configure TLS, rate limiting, deployment timeouts, and monitoring before exposing it publicly.
 
-No provider SDK is included yet. Add one behind a backend-only adapter, using deployment secrets. Never expose `TATHABBUT_API_KEY` to the extension. Enforce timeouts, cost controls, consent, retention disclosure, and strict output validation.
+No provider SDK is included yet. Add one behind a backend-only adapter, using deployment secrets. Never expose `TATHABBUT_API_KEY` to the extension. Enforce consent, retention disclosure, cost controls, and strict output validation.
