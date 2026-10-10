@@ -16,5 +16,11 @@
   "action": {
     "default_title": "Tathabbut settings",
     "default_popup": "popup.html"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["chunks/*"],
+      "matches": ["https://www.facebook.com/*"]
+    }
+  ]
 }
