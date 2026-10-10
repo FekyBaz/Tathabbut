@@ -5,11 +5,12 @@
   "description": "Tathabbut reversible text filter",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/copy-extension-files.mjs",
     "test": "vitest run",
     "dev": "vite"
   },
   "devDependencies": {
+    "@types/chrome": "^0.0.300",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
     "vitest": "^3.0.5"
