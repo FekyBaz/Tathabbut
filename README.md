@@ -49,7 +49,7 @@ Health check: `http://127.0.0.1:8000/health`.
 - Threats of violence
 - Spam
 
-User controls include enabling/disabling filtering, selecting categories, adjusting confidence threshold, and optionally configuring a self-hosted API URL. Leaving the API blank keeps classification local.
+User controls include enabling/disabling filtering, selecting categories, adjusting confidence threshold, and optionally configuring a self-hosted API URL. Leaving the API blank keeps classification local. Remote calls are routed through the extension service worker; the extension requests optional access to the configured host only after the user saves that URL. HTTPS is required for non-local hosts, and changing or clearing the URL removes the previous host permission.
 
 ## Privacy and limitations
 Provider keys must stay on the backend, never in extension code. Only a selected text snippet and chosen categories should be sent when remote classification is explicitly configured. The backend starter makes no external model calls.
