@@ -1,12 +1,14 @@
 import { copyFile, mkdir } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = resolve(import.meta.dirname, "..");
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const dist = resolve(root, "dist");
 await mkdir(dist, { recursive: true });
 
-for (const file of ["manifest.json", "src/content.css"]) {
-  const destination = resolve(dist, file === "manifest.json" ? "manifest.json" : "content.css");
-  await mkdir(dirname(destination), { recursive: true });
-  await copyFile(resolve(root, file), destination);
+for (const [source, target] of [
+  ["manifest.json", "manifest.json"],
+  ["src/content.css", "content.css"]
+]) {
+  await copyFile(resolve(root, source), resolve(dist, target));
 }
