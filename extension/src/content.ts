@@ -40,23 +40,18 @@ async function classify(text: string): Promise<Classification> {
   const localResult = classifyLocally(text);
   if (!settings.apiUrl) return localResult;
   try {
-    const response = await fetch(settings.apiUrl.replace(/\/$/, "") + "/v1/classify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, enabled_categories: settings.enabledCategories }),
-      signal: AbortSignal.timeout(5000),
-      credentials: "omit",
-      referrerPolicy: "no-referrer"
-    });
-    if (!response.ok) return localResult;
-    const remote: unknown = await response.json();
-    return isUsableRemoteClassification(remote) ? remote : localResult;
+    const response = await chrome.runtime.sendMessage({
+      type: "tathabbut:classify-remote",
+      apiUrl: settings.apiUrl,
+      text,
+      enabledCategories: settings.enabledCategories
+    }) as { ok?: boolean; result?: unknown } | undefined;
+    if (response?.ok && isUsableRemoteClassification(response.result)) return response.result;
   } catch {
-    // Fail open: a failed or unavailable API must not hide content.
-    return localResult;
+    // Missing permission, unavailable service worker, or API failure uses local rules.
   }
+  return localResult;
 }
-
 function reveal(element: Element): void {
   element.classList.remove(HIDDEN_CLASS);
   element.removeAttribute("data-tathabbut-hidden");
