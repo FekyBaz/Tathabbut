@@ -1,4 +1,5 @@
 import { DEFAULT_SETTINGS, type Category, type UserSettings } from "./policy";
+import { apiPermissionPattern, normalizeApiUrl } from "./remote-api";
 
 const byId = <T extends HTMLElement>(id: string): T => {
   const element = document.getElementById(id);
@@ -37,28 +38,58 @@ async function load(): Promise<void> {
     status.textContent = "Could not load settings; defaults are active.";
   }
 }
+
 byId<HTMLButtonElement>("save").addEventListener("click", async () => {
-  const rawUrl = apiUrl.value.trim();
-  if (rawUrl) {
-    try {
-      const parsed = new URL(rawUrl);
-      if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) throw new Error();
-    } catch {
-      status.textContent = "Enter a valid HTTP(S) API URL without credentials.";
-      return;
-    }
-  }
-  const value: UserSettings = {
-    enabled: enabled.checked,
-    enabledCategories: selectedCategories(),
-    threshold: Number(threshold.value) / 100,
-    apiUrl: rawUrl.replace(/\/$/, "")
-  };
+  let normalizedUrl: string;
   try {
+    normalizedUrl = normalizeApiUrl(apiUrl.value);
+  } catch (error) {
+    status.textContent = error instanceof Error ? error.message : "Enter a valid API URL.";
+    return;
+  }
+
+  try {
+    const stored = await chrome.storage.sync.get("tathabbutSettings");
+    const oldValue = stored.tathabbutSettings as UserSettings | undefined;
+    let oldUrl = "";
+    try {
+      oldUrl = oldValue?.apiUrl ? normalizeApiUrl(oldValue.apiUrl) : "";
+    } catch {
+      // A previously stored invalid URL is not trusted or reused.
+    }
+
+    let newPermission: string | null = null;
+    if (normalizedUrl) {
+      newPermission = apiPermissionPattern(normalizedUrl);
+      const alreadyGranted = await chrome.permissions.contains({ origins: [newPermission] });
+      if (!alreadyGranted) {
+        const granted = await chrome.permissions.request({ origins: [newPermission] });
+        if (!granted) {
+          status.textContent = "API permission was not granted. Settings were not changed.";
+          return;
+        }
+      }
+    }
+
+    const value: UserSettings = {
+      enabled: enabled.checked,
+      enabledCategories: selectedCategories(),
+      threshold: Number(threshold.value) / 100,
+      apiUrl: normalizedUrl
+    };
     await chrome.storage.sync.set({ tathabbutSettings: value });
-    status.textContent = "Settings saved. Reload Facebook to reprocess previous items.";
+
+    if (oldUrl) {
+      const oldPermission = apiPermissionPattern(oldUrl);
+      if (oldPermission !== newPermission) {
+        await chrome.permissions.remove({ origins: [oldPermission] });
+      }
+    }
+    status.textContent = normalizedUrl
+      ? "Settings saved. Remote classification uses the granted host only."
+      : "Settings saved. Local-only mode is active.";
   } catch {
-    status.textContent = "Could not save settings. Check extension storage permissions.";
+    status.textContent = "Could not save settings or update API permissions.";
   }
 });
 void load();
