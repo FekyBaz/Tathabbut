@@ -24,6 +24,21 @@ jobs:
       - run: npm install
       - run: npm test
       - run: npm run build
+      - name: Verify unpacked extension files
+        run: |
+          test -f dist/manifest.json
+          test -f dist/content.js
+          test -f dist/content.css
+          test -f dist/popup.html
+          test -f dist/popup.js
+          node -e "const m=require('./dist/manifest.json'); if(m.manifest_version!==3) process.exit(1);"
+      - name: Upload unpacked extension
+        uses: actions/upload-artifact@v4
+        with:
+          name: tathabbut-chrome-extension
+          path: extension/dist/
+          if-no-files-found: error
+          retention-days: 14
 
   backend:
     name: Backend tests and lint
