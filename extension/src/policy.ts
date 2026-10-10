@@ -26,26 +26,42 @@ export const DEFAULT_SETTINGS: UserSettings = {
   apiUrl: ""
 };
 
+function normalizeForRules(text: string): string {
+  return text
+    .normalize("NFKC")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 4000);
+}
+
 const patterns: Record<Category, RegExp[]> = {
   harassment: [
     /\b(?:you are|you're) (?:a|an) (?:moron|idiot|loser)\b/i,
-    /\b(?:shut up|you are pathetic)\b/i
+    /\b(?:shut up|you are pathetic)\b/i,
+    /(?:^|[\s،,.!?؟])(?:انت|انتي)\s+(?:غبي|غبيه|حمار|فاشل|فاشله)(?=$|[\s،,.!?؟])/u,
+    /(?:^|[\s،,.!?؟])يا\s+(?:غبي|غبيه|حمار|فاشل|فاشله)(?=$|[\s،,.!?؟])/u
   ],
   hate: [
     /\b(?:all|every) (?:members of )?(?:group) are (?:vermin|subhuman)\b/i
   ],
   threats: [
     /\b(?:i will|i'm going to) (?:kill|hurt|attack) you\b/i,
-    /\b(?:i will|i'm going to) kill (?:him|her|them)\b/i
+    /\b(?:i will|i'm going to) kill (?:him|her|them)\b/i,
+    /(?:^|[\s،,.!?؟])(?:هقتلك|هاذيك|هضربك|سوف\s+اقتلك|سوف\s+اذيك)(?=$|[\s،,.!?؟])/u,
+    /(?:^|[\s،,.!?؟])(?:هقتل|هاذي|هضرب)(?:ه|ها|هم)(?=$|[\s،,.!?؟])/u
   ],
   spam: [
     /\b(?:dm me to claim|guaranteed profit|claim your prize now)\b/i,
-    /(?:https?:\/\/\S+\s*){4,}/i
+    /(?:https?:\/\/\S+\s*){4,}/i,
+    /(?:^|[\s،,.!?؟])(?:ابعتلي خاص عشان تكسب|اربح الجائزة الآن|مبروك كسبت الجائزة)(?=$|[\s،,.!?؟])/u
   ]
 };
 
 export function classifyLocally(text: string): Classification {
-  const normalized = text.trim().slice(0, 4000);
+  const normalized = normalizeForRules(text);
   const labels: LabelScore[] = [];
   for (const category of CATEGORIES) {
     if (patterns[category].some((pattern) => pattern.test(normalized))) {
