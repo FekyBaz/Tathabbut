@@ -1,0 +1,17 @@
+node_modules/
+extension/dist/
+extension/.env
+npm-debug.log*
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+.env
+.env.*
+coverage/
+htmlcov/
+.DS_Store
+Thumbs.db
