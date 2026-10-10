@@ -118,7 +118,7 @@ function evaluate(element: Element): void {
 }
 
 function scan(): void {
-  for (const element of document.querySelectorAll(ARTICLE_SELECTOR)) evaluate(element);
+  for (const element of Array.from(document.querySelectorAll(ARTICLE_SELECTOR))) evaluate(element);
 }
 
 function processMutations(records: MutationRecord[]): void {
@@ -126,7 +126,7 @@ function processMutations(records: MutationRecord[]): void {
   for (const record of records) {
     const parentArticle = articleFor(record.target);
     if (parentArticle) affected.add(parentArticle);
-    for (const addedNode of record.addedNodes) {
+    for (const addedNode of Array.from(record.addedNodes)) {
       const containingArticle = articleFor(addedNode);
       if (containingArticle) affected.add(containingArticle);
       for (const nestedArticle of articlesWithin(addedNode)) affected.add(nestedArticle);
