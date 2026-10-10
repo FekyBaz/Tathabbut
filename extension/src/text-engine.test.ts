@@ -3,7 +3,7 @@ import { BoundedTaskQueue, fingerprintText, normalizeText } from "./text-engine"
 
 describe("text normalization and fingerprints", () => {
   it("normalizes whitespace consistently", () => {
-    expect(normalizeText("  hello\\n  world  ")).toBe("hello world");
+    expect(normalizeText("  hello\n  world  ")).toBe("hello world");
   });
 
   it("is stable for identical text and changes when text changes", () => {
