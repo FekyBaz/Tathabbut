@@ -4,19 +4,19 @@ from tathabbut_api.schemas import Category, ClassifyRequest, ClassifyResponse, L
 
 PATTERNS: dict[Category, tuple[re.Pattern[str], ...]] = {
     "harassment": (
-        re.compile(r"\b(?:you are|you're) (?:a )?(?:moron|idiot|loser)\b", re.I),
-        re.compile(r"\b(?:shut up|you are pathetic)\b", re.I),
+        re.compile(r"\b(?:you are|you're) (?:a )?(?:moron|idiot|loser)\b", re.IGNORECASE),
+        re.compile(r"\b(?:shut up|you are pathetic)\b", re.IGNORECASE),
     ),
     "hate": (
-        re.compile(r"\b(?:all|every) (?:members of )?(?:group) are (?:vermin|subhuman)\b", re.I),
+        re.compile(r"\b(?:all|every) (?:members of )?(?:group) are (?:vermin|subhuman)\b", re.IGNORECASE),
     ),
     "threats": (
-        re.compile(r"\b(?:i will|i'm going to) (?:kill|hurt|attack) you\b", re.I),
-        re.compile(r"\b(?:i will|i'm going to) kill (?:him|her|them)\b", re.I),
+        re.compile(r"\b(?:i will|i'm going to) (?:kill|hurt|attack) you\b", re.IGNORECASE),
+        re.compile(r"\b(?:i will|i'm going to) kill (?:him|her|them)\b", re.IGNORECASE),
     ),
     "spam": (
-        re.compile(r"\b(?:dm me to claim|guaranteed profit|claim your prize now)\b", re.I),
-        re.compile(r"(?:https?://\S+\s*){4,}", re.I),
+        re.compile(r"\b(?:dm me to claim|guaranteed profit|claim your prize now)\b", re.IGNORECASE),
+        re.compile(r"(?:https?://\S+\s*){4,}", re.IGNORECASE),
     ),
 }
 
