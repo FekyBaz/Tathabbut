@@ -4,7 +4,12 @@
   "version": "0.1.0",
   "description": "A reversible, user-controlled text filter for social feeds.",
   "permissions": ["storage"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
   "host_permissions": ["https://www.facebook.com/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "content_scripts": [
     {
       "matches": ["https://www.facebook.com/*"],
