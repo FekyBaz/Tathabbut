@@ -48,17 +48,10 @@ byId<HTMLButtonElement>("save").addEventListener("click", async () => {
     return;
   }
 
+  let newPermission: string | null = null;
+  let permissionWasNewlyGranted = false;
   try {
-    const stored = await chrome.storage.sync.get("tathabbutSettings");
-    const oldValue = stored.tathabbutSettings as UserSettings | undefined;
-    let oldUrl = "";
-    try {
-      oldUrl = oldValue?.apiUrl ? normalizeApiUrl(oldValue.apiUrl) : "";
-    } catch {
-      // A previously stored invalid URL is not trusted or reused.
-    }
-
-    let newPermission: string | null = null;
+    // Request permission directly from the save click before any asynchronous storage calls.
     if (normalizedUrl) {
       newPermission = apiPermissionPattern(normalizedUrl);
       const alreadyGranted = await chrome.permissions.contains({ origins: [newPermission] });
@@ -68,7 +61,17 @@ byId<HTMLButtonElement>("save").addEventListener("click", async () => {
           status.textContent = "API permission was not granted. Settings were not changed.";
           return;
         }
+        permissionWasNewlyGranted = true;
       }
+    }
+
+    const stored = await chrome.storage.sync.get("tathabbutSettings");
+    const oldValue = stored.tathabbutSettings as UserSettings | undefined;
+    let oldUrl = "";
+    try {
+      oldUrl = oldValue?.apiUrl ? normalizeApiUrl(oldValue.apiUrl) : "";
+    } catch {
+      // A previously stored invalid URL is not trusted or reused.
     }
 
     const value: UserSettings = {
@@ -89,6 +92,9 @@ byId<HTMLButtonElement>("save").addEventListener("click", async () => {
       ? "Settings saved. Remote classification uses the granted host only."
       : "Settings saved. Local-only mode is active.";
   } catch {
+    if (permissionWasNewlyGranted && newPermission) {
+      await chrome.permissions.remove({ origins: [newPermission] }).catch(() => false);
+    }
     status.textContent = "Could not save settings or update API permissions.";
   }
 });
