@@ -1,41 +1,37 @@
 # Tathabbut (تثبّت)
 
-**A privacy-conscious, open-source text safety filter for social feeds.**
+**A privacy-conscious open-source text filter for social feeds.**
 
-Tathabbut is a browser extension that helps people choose what they see on social media by locally hiding text that matches their own preferences. The first supported site is Facebook. It does not delete posts, change Facebook data, or make moderation decisions on behalf of anyone.
+Tathabbut is a Chrome extension that locally hides text matching user-selected categories. The first target is Facebook. It never deletes posts or modifies Facebook data.
 
-> **Principle:** hide locally, explain clearly, restore anytime.
+> **Hide locally. Explain clearly. Restore anytime.**
 
-## Why the name?
-**تثبّت** means to verify, be deliberate, and avoid rushing to judgement. The project applies that spirit to online text: evaluate context carefully, make filtering configurable, and avoid treating disagreement or respectful criticism as abuse.
+The Arabic name تثبّت conveys careful verification and avoiding hasty judgment. Respectful criticism is not a violation category. The initial classifier uses narrow, deterministic starter rules; it does not establish truth or intent. Misinformation filtering is not enabled by default because verification needs evidence and provenance.
 
-## MVP status
-This initial release lays the foundations for:
-- A Manifest V3 Chrome extension for Facebook feed text.
-- A local reversible hide/restore flow.
-- A separately hosted FastAPI classifier API.
-- Privacy, security, contribution, and testing documentation.
+## Current status
 
-The starter classifier is deliberately conservative and rule-based. It does not claim to determine truth or intent perfectly. Misinformation filtering is not enabled by default because factual verification needs evidence and provenance.
+The repository contains the initial Chrome Manifest V3 extension, optional FastAPI endpoint, CI tests/build, and project privacy/security documents. This is an early MVP and the Facebook selectors/rules need broader manual and language-aware evaluation before everyday use.
 
-## Stack
-- Extension: TypeScript + Vite + Chrome Manifest V3.
-- API: Python 3.11+ + FastAPI.
-- Testing: Vitest, pytest, Ruff.
-- License: MIT.
+## Get the extension
 
-## Quick start
+1. Open the latest successful [GitHub Actions workflow](https://github.com/FekyBaz/Tathabbut/actions/workflows/ci.yml).
+2. Open its run and download the `tathabbut-chrome-extension` artifact.
+3. Extract the ZIP to a folder.
+4. Visit `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and choose the extracted folder.
 
-### Extension
+The artifact is created by CI after tests and package-layout checks pass.
+
+## Run locally
+
+Extension:
 ```bash
 cd extension
 npm install
 npm test
 npm run build
 ```
-Open `chrome://extensions`, enable Developer mode, click **Load unpacked**, and select `extension/dist`.
 
-### Backend
+API:
 ```bash
 cd backend
 python -m venv .venv
@@ -44,27 +40,23 @@ python -m venv .venv
 pip install -e ".[dev]"
 uvicorn tathabbut_api.main:app --reload
 ```
+
 Health check: `http://127.0.0.1:8000/health`.
 
-## Privacy
-- Local classification is the default.
-- Remote classification is used only when the user configures an API URL.
-- Only the text snippet and selected categories should be sent remotely.
-- Provider keys belong on the server, never in extension code.
-- The API starter does not log submitted text by design.
-- Hidden content remains on Facebook and can be revealed in the browser.
+## Categories in the starter
+- Personal insults / harassment
+- Hateful or dehumanizing attacks
+- Threats of violence
+- Spam
 
-Read [Privacy model](docs/PRIVACY.md), [Threat model](docs/THREAT_MODEL.md), and [Responsible filtering](docs/RESPONSIBLE_FILTERING.md).
+User controls include enabling/disabling filtering, selecting categories, adjusting confidence threshold, and optionally configuring a self-hosted API URL. Leaving the API blank keeps classification local.
 
-## Responsible filtering
-A label is a suggestion, not a fact. Quotation, satire, reclaimed language, dialect, counterspeech, and educational discussion can lead to false positives. Tathabbut therefore supports user-controlled categories, a confidence threshold, and reversible hiding. Respectful criticism and disagreement are not violation categories.
+## Privacy and limitations
+Provider keys must stay on the backend, never in extension code. Only a selected text snippet and chosen categories should be sent when remote classification is explicitly configured. The backend starter makes no external model calls.
 
-## Project structure
-- `extension/`: Chrome extension
-- `backend/`: FastAPI service
-- `docs/`: architecture, privacy, threat model, roadmap
-- `.github/`: CI and contribution templates
+Context matters: quotations, satire, reclaimed language, dialect, counterspeech, or reporting abuse can be misread by classifiers. Filtering is reversible and does not report or delete content. See [privacy](docs/PRIVACY.md), [responsible filtering](docs/RESPONSIBLE_FILTERING.md), and [threat model](docs/THREAT_MODEL.md).
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+## Contributing
+See [CONTRIBUTING.md](CONTRIBUTING.md), the [roadmap](docs/ROADMAP.md), and issue templates. License: MIT.
 
-The project is inspired by the general value of careful verification. It is not a religious authority and does not enforce religious rules.
+The project draws inspiration from the general value of careful verification; it is not a religious authority and does not enforce religious rules.
