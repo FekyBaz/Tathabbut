@@ -7,8 +7,12 @@ or public claim.
 ## Setup
 
 - Browser: Chrome (record the exact version from `chrome://version`).
-- Extension: fresh `npm run build` artifact from the branch under test,
-  loaded via Load unpacked (remove any older copy first).
+- Extension: fresh `npm run build` artifact from the branch under test.
+  Open `chrome://extensions/`, enable Developer mode, remove any older
+  copy of Tathabbut, then Load unpacked and select the `extension/dist`
+  directory. Confirm the install shows no errors.
+- Confirm the installed copy matches the reviewed commit (compare the
+  popup Diagnostics behavior and the `dist/content.js` build date).
 - Page: `https://www.facebook.com/` logged into the test profile.
 - Popup: filtering enabled, all four categories on, threshold **85%**.
 
