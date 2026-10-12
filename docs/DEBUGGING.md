@@ -42,7 +42,10 @@ Stock local scores top out at **0.90** (0.86 for most categories), so a
 
 ## Symptom map
 
-- No status and no `loaded` → installation/injection problem.
+- No status and no `loaded` → installation/injection problem. First check
+  the address bar: the extension only runs on facebook.com hosts
+  (www, web, m, and the bare apex). Any other host means no injection
+  by design, not a classifier bug.
 - `articles: 0` → selector mismatch (standalone comments without
   `role="article"` are skipped by design).
 - `below-threshold` → lower the threshold (e.g. 85%) for stock rules.

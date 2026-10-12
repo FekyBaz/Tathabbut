@@ -56,6 +56,26 @@ if (manifestRaw) {
         if (source && file.endsWith(".js")) assertClassicScript(file, source);
       }
     }
+    // Host scope: every content-script match must be https-only and
+    // facebook-only, and the set must cover the apex plus subdomains so
+    // web.facebook.com / m.facebook.com are not silently skipped.
+    const matches = (manifest.content_scripts ?? []).flatMap((entry) => entry.matches ?? []);
+    const hosts = [...matches, ...(manifest.host_permissions ?? [])];
+    for (const pattern of hosts) {
+      if (!pattern.startsWith("https://") || !pattern.endsWith("/*")) {
+        fail("host pattern must be https-only with a /* path: " + pattern);
+      }
+      if (pattern.includes("<all_urls>") || pattern.startsWith("https://*/")) {
+        fail("host pattern is too broad: " + pattern);
+      }
+      const host = pattern.replace(/^https:\/\//, "").replace(/\/\*$/, "");
+      if (host !== "facebook.com" && host !== "*.facebook.com" && !host.endsWith(".facebook.com")) {
+        fail("unexpected non-facebook host pattern: " + pattern);
+      }
+    }
+    if (!matches.includes("https://*.facebook.com/*") || !matches.includes("https://facebook.com/*")) {
+      fail("content-script matches must cover https://*.facebook.com/* and https://facebook.com/*.");
+    }
     const background = manifest.background?.service_worker;
     if (!background) {
       fail("background.service_worker is missing.");

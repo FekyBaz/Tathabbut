@@ -2,7 +2,7 @@
 
 **A privacy-conscious open-source text filter for social feeds.**
 
-Tathabbut is a Chrome extension that locally hides text matching user-selected categories. The first target is Facebook. It never deletes posts or modifies Facebook data.
+Tathabbut is a Chrome extension that locally hides text matching user-selected categories. The first target is Facebook (facebook.com hosts: www, web, m, and the bare apex). It never deletes posts or modifies Facebook data.
 
 > **Hide locally. Explain clearly. Restore anytime.**
 
