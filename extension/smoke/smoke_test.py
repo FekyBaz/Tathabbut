@@ -12,12 +12,14 @@ compatibility with Facebook's live DOM.
 import json
 import sys
 import traceback
+from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-DIST = r"C:\Users\laphouse\AppData\Local\Temp\opencode\Tathabbut\extension\dist"
-FIXTURE = r"C:\Users\laphouse\AppData\Local\Temp\opencode\Tathabbut\extension\smoke\fixture.html"
-LOG = r"C:\Users\laphouse\AppData\Local\Temp\opencode\smoke_log.txt"
+SMOKE_DIR = Path(__file__).resolve().parent
+DIST = str(SMOKE_DIR.parent / "dist")
+FIXTURE = str(SMOKE_DIR / "fixture.html")
+LOG = str(SMOKE_DIR / "smoke_log.txt")
 RESULTS = []
 
 

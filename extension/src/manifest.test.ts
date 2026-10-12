@@ -51,6 +51,9 @@ describe("manifest host scope", () => {
       ["https://www.facebook.com/groups/feed/", true],
       ["http://www.facebook.com/", false],
       ["https://evilfacebook.com/", false],
+      ["https://facebook.com.attacker.example/", false],
+      ["https://notfacebook.com/", false],
+      ["https://www.example.com/", false],
       ["https://facebook.com.evil.com/", false],
       ["https://www.notfacebook.com/", false]
     ];
