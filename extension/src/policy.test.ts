@@ -68,3 +68,16 @@ describe("regression and decision boundaries", () => {
     expect(isUsableRemoteClassification({ labels: [], provider: 42 })).toBe(false);
   });
 });
+
+describe("hide decision for a clear rule match", () => {
+  it("hides when the category is enabled and the threshold fits the rule score", () => {
+    const result = classifyLocally("You are an idiot");
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+  it("does not hide the same match at a 99% threshold", () => {
+    const result = classifyLocally("You are an idiot");
+    // Stock local scores top out at 0.90, so 0.99 hides nothing by design.
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.99 })).toBe(false);
+  });
+});
