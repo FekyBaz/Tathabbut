@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, classifyLocally, isUsableRemoteClassification, shouldHide, type Classification, type UserSettings } from "./policy";
+import { CATEGORIES, DEFAULT_SETTINGS, classifyLocally, isUsableRemoteClassification, shouldHide, type Category, type Classification, type LabelScore, type UserSettings } from "./policy";
 import { BoundedTaskQueue, fingerprintText, normalizeText } from "./text-engine";
 
 const ARTICLE_SELECTOR = '[role="article"]';
@@ -15,7 +15,27 @@ interface ItemState {
 const itemStates = new WeakMap<Element, ItemState>();
 const queue = new BoundedTaskQueue(2, MAX_QUEUED_ITEMS);
 
-function readText(element: Element): string {
+const DEBUG_PREFIX = "[Tathabbut debug]";
+let debugEnabled = readLocalDebugFlag();
+
+function readLocalDebugFlag(): boolean {
+  try {
+    return window.localStorage?.getItem("tathabbutDebug") === "1";
+  } catch {
+    return false;
+  }
+}
+
+// Gated, metadata-only diagnostics. Never logs post text, author names,
+// URLs, or page content: only counts, settings state, fingerprints
+// (hash:length), classification outcomes, and skip reasons.
+function debugLog(event: string, details?: Record<string, unknown>): void {
+  if (!debugEnabled) return;
+  if (details === undefined) console.info(DEBUG_PREFIX + " " + event);
+  else console.info(DEBUG_PREFIX + " " + event, details);
+}
+
+export function readText(element: Element): string {
   // Our own reveal control must not change the fingerprint or trigger a reclassification.
   const clone = element.cloneNode(true) as Element;
   clone.querySelectorAll(".tathabbut-reveal").forEach((control) => control.remove());
@@ -38,7 +58,10 @@ function articlesWithin(node: Node): Element[] {
 
 async function classify(text: string): Promise<Classification> {
   const localResult = classifyLocally(text);
-  if (!settings.apiUrl) return localResult;
+  if (!settings.apiUrl) {
+    debugLog("classify", { mode: "local", labels: localResult.labels.length });
+    return localResult;
+  }
   try {
     const response = await chrome.runtime.sendMessage({
       type: "tathabbut:classify-remote",
@@ -46,21 +69,68 @@ async function classify(text: string): Promise<Classification> {
       text,
       enabledCategories: settings.enabledCategories
     }) as { ok?: boolean; result?: unknown } | undefined;
-    if (response?.ok && isUsableRemoteClassification(response.result)) return response.result;
+    if (response?.ok && isUsableRemoteClassification(response.result)) {
+      debugLog("classify", { mode: "remote", labels: response.result.labels.length });
+      return response.result;
+    }
   } catch {
     // Missing permission, unavailable service worker, or API failure uses local rules.
   }
+  debugLog("classify", { mode: "remote-fallback-local", labels: localResult.labels.length });
   return localResult;
 }
-function reveal(element: Element): void {
+export function reveal(element: Element): void {
   element.classList.remove(HIDDEN_CLASS);
   element.removeAttribute("data-tathabbut-hidden");
   element.querySelectorAll(":scope > .tathabbut-reveal").forEach((button) => button.remove());
 }
 
-function applyResult(element: Element, result: Classification): void {
-  if (!shouldHide(result, settings)) {
+interface Decision {
+  hidden: boolean;
+  reason: string;
+  category?: Category;
+  score?: number;
+}
+
+// Mirrors shouldHide but explains WHY, for diagnostics only.
+// Precedence: an actual hide beats a near-miss; a near-miss (rule matched
+// but score below threshold) beats a disabled category; otherwise no match.
+function describeDecision(result: Classification): Decision {
+  if (!settings.enabled) return { hidden: false, reason: "filter-disabled" };
+  let weak: LabelScore | undefined;
+  let off: Category | undefined;
+  for (const label of result.labels) {
+    if (!CATEGORIES.includes(label.category)) continue;
+    if (!settings.enabledCategories.includes(label.category)) {
+      off ??= label.category;
+      continue;
+    }
+    if (!Number.isFinite(label.score) || label.score < 0 || label.score > 1) continue;
+    if (label.score >= settings.threshold) {
+      return { hidden: true, reason: "rule-match", category: label.category, score: label.score };
+    }
+    weak ??= label;
+  }
+  if (weak !== undefined) {
+    return { hidden: false, reason: "below-threshold", category: weak.category, score: weak.score };
+  }
+  if (off !== undefined) return { hidden: false, reason: "category-disabled", category: off };
+  return { hidden: false, reason: "no-rule-match" };
+}
+
+export function applyResult(element: Element, result: Classification): void {
+  const decision = describeDecision(result);
+  const fingerprint = itemStates.get(element)?.fingerprint ?? "unknown";
+  if (!decision.hidden) {
     reveal(element);
+    const details: Record<string, unknown> = {
+      decision: "shown",
+      reason: decision.reason,
+      fingerprint
+    };
+    if (decision.category !== undefined) details.category = decision.category;
+    if (decision.score !== undefined) details.score = decision.score;
+    debugLog("decision", details);
     return;
   }
   if (element.getAttribute("data-tathabbut-hidden") === "true") return;
@@ -73,12 +143,20 @@ function applyResult(element: Element, result: Classification): void {
   button.setAttribute("aria-label", "Reveal content hidden by Tathabbut");
   button.addEventListener("click", () => reveal(element), { once: true });
   element.prepend(button);
+  debugLog("decision", {
+    decision: "hidden",
+    reason: decision.reason,
+    category: decision.category,
+    score: decision.score,
+    fingerprint
+  });
 }
 
-function evaluate(element: Element): void {
+export function evaluate(element: Element): void {
   if (!(element instanceof HTMLElement) || !element.isConnected) return;
   if (!settings.enabled) {
     reveal(element);
+    debugLog("skip", { reason: "filter-disabled" });
     return;
   }
 
@@ -86,12 +164,16 @@ function evaluate(element: Element): void {
   if (!text) {
     itemStates.delete(element);
     reveal(element);
+    debugLog("skip", { reason: "empty-text" });
     return;
   }
 
   const fingerprint = fingerprintText(text);
   const previous = itemStates.get(element);
-  if (previous?.fingerprint === fingerprint && previous.settingsVersion === settingsVersion) return;
+  if (previous?.fingerprint === fingerprint && previous.settingsVersion === settingsVersion) {
+    debugLog("skip", { reason: "unchanged", fingerprint });
+    return;
+  }
 
   // A changed post invalidates the previous decision immediately; stale async results cannot re-hide it.
   reveal(element);
@@ -109,11 +191,16 @@ function evaluate(element: Element): void {
   });
 
   // If the bounded queue is saturated, allow a later DOM change or settings update to retry.
-  if (!accepted) itemStates.delete(element);
+  if (!accepted) {
+    itemStates.delete(element);
+    debugLog("skip", { reason: "queue-full", fingerprint });
+  }
 }
 
-function scan(): void {
-  for (const element of Array.from(document.querySelectorAll(ARTICLE_SELECTOR))) evaluate(element);
+export function scan(): void {
+  const found = Array.from(document.querySelectorAll(ARTICLE_SELECTOR));
+  debugLog("scan", { articles: found.length });
+  for (const element of found) evaluate(element);
 }
 
 function processMutations(records: MutationRecord[]): void {
@@ -127,12 +214,15 @@ function processMutations(records: MutationRecord[]): void {
       for (const nestedArticle of articlesWithin(addedNode)) affected.add(nestedArticle);
     }
   }
+  debugLog("mutations", { batches: records.length, affected: affected.size });
   for (const element of affected) evaluate(element);
 }
 
 async function loadSettings(): Promise<void> {
+  let storedDebug: unknown = false;
   try {
-    const stored = await chrome.storage.sync.get("tathabbutSettings");
+    const stored = await chrome.storage.sync.get(["tathabbutSettings", "tathabbutDebug"]);
+    storedDebug = stored.tathabbutDebug;
     const candidate = stored.tathabbutSettings as Partial<UserSettings> | undefined;
     if (candidate && typeof candidate === "object") {
       settings = {
@@ -152,7 +242,15 @@ async function loadSettings(): Promise<void> {
     // Keep safe local defaults if extension storage is unavailable.
   }
 
+  debugEnabled = storedDebug === true || readLocalDebugFlag();
+
   settingsVersion += 1;
+  debugLog("settings", {
+    enabled: settings.enabled,
+    categories: settings.enabledCategories.length,
+    threshold: settings.threshold,
+    mode: settings.apiUrl ? "remote" : "local"
+  });
   document.querySelectorAll("." + HIDDEN_CLASS).forEach(reveal);
   scan();
 }
@@ -169,3 +267,5 @@ observer.observe(document.documentElement, {
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "sync" && changes.tathabbutSettings) void loadSettings();
 });
+
+debugLog("loaded", { topFrame: window.top === window });
