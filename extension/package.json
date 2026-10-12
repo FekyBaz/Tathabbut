@@ -5,7 +5,7 @@
   "description": "Tathabbut reversible text filter",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && vite build && node scripts/copy-extension-files.mjs",
+    "build": "tsc --noEmit && vite build --config vite.content.config.ts && vite build && node scripts/copy-extension-files.mjs && node scripts/verify-dist.mjs",
     "test": "vitest run",
     "dev": "vite"
   },

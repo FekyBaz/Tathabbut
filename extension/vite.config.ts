@@ -3,11 +3,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   build: {
     outDir: "dist",
-    emptyOutDir: true,
+    emptyOutDir: false,
     rollupOptions: {
       input: {
         background: "src/background.ts",
-        content: "src/content.ts",
         popup: "src/popup.html"
       },
       output: {
