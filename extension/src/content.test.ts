@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SETTINGS, type UserSettings } from "./policy";
+import { DEBUG_FLAG_KEY, STATUS_KEY } from "./diagnostics";
 
 const SETTINGS_KEY = "tathabbutSettings";
 const DEBUG_KEY = "tathabbutDebug";
@@ -23,19 +24,30 @@ function fixture(): string {
 }
 
 let storedSettings: unknown;
+let storedDebug: unknown;
+let localSets: Array<Record<string, unknown>>;
 let changeListeners: Array<(changes: Record<string, unknown>, area: string) => void>;
 
 function installChromeStub(): void {
   changeListeners = [];
   const sync = {
     get: vi.fn(async (keys: unknown) => {
+      if (typeof keys === "string" && keys === SETTINGS_KEY) return { [SETTINGS_KEY]: storedSettings };
+      return {};
+    })
+  };
+  localSets = [];
+  const local = {
+    get: vi.fn(async (keys: unknown) => {
       const names = typeof keys === "string" ? [keys] : (keys as string[]);
       const out: Record<string, unknown> = {};
       for (const name of names ?? []) {
-        if (name === SETTINGS_KEY) out[name] = storedSettings;
-        if (name === DEBUG_KEY) out[name] = undefined;
+        if (name === DEBUG_FLAG_KEY) out[name] = storedDebug;
       }
       return out;
+    }),
+    set: vi.fn(async (items: Record<string, unknown>) => {
+      localSets.push(items);
     })
   };
   const onChanged = {
@@ -45,13 +57,13 @@ function installChromeStub(): void {
   };
   const runtime = { sendMessage: vi.fn(async () => undefined) };
   (globalThis as unknown as { chrome: unknown }).chrome = {
-    storage: { sync, onChanged },
+    storage: { sync, local, onChanged },
     runtime
   };
 }
 
-function fireStorageChange(): void {
-  for (const listener of changeListeners) listener({ [SETTINGS_KEY]: {} }, "sync");
+function fireStorageChange(area = "sync", changes: Record<string, unknown> = { [SETTINGS_KEY]: {} }): void {
+  for (const listener of changeListeners) listener(changes, area);
 }
 
 async function loadContentModule() {
@@ -85,6 +97,7 @@ beforeEach(() => {
   window.localStorage.clear();
   installChromeStub();
   storedSettings = undefined;
+  storedDebug = undefined;
   vi.restoreAllMocks();
 });
 
@@ -186,6 +199,88 @@ describe("content lifecycle on feed fixtures", () => {
     const post = byId(MATCHING_POST);
     await vi.waitFor(() => expect(isHidden(post)).toBe(true));
     expect(mod.readText(post)).not.toContain("reveal");
+  });
+
+  it("writes a device-local status snapshot without post text", async () => {
+    document.body.innerHTML = fixture();
+    await loadContentModule();
+    const post = byId(MATCHING_POST);
+    await vi.waitFor(() => expect(isHidden(post)).toBe(true));
+    let snapshots: Array<Record<string, unknown>> = [];
+    await vi.waitFor(() => {
+      snapshots = localSets
+        .map((items) => items[STATUS_KEY])
+        .filter((value): value is Record<string, unknown> => !!value && typeof value === "object");
+      const done = snapshots[snapshots.length - 1] as unknown as { classified: number };
+      expect(done.classified).toBeGreaterThanOrEqual(3);
+    });
+    const latest = snapshots[snapshots.length - 1] as unknown as {
+      startedAt: number; settingsOk: boolean; articlesFound: number;
+      evaluated: number; classified: number; hidden: number; lastReason: string;
+    };
+    expect(typeof latest.startedAt).toBe("number");
+    expect(latest.settingsOk).toBe(true);
+    expect(latest.articlesFound).toBe(3);
+    expect(latest.classified).toBeGreaterThanOrEqual(3);
+    expect(latest.hidden).toBeGreaterThanOrEqual(2);
+    expect(typeof latest.lastReason).toBe("string");
+    expect(JSON.stringify(snapshots)).not.toContain("You are an idiot");
+    expect(JSON.stringify(snapshots)).not.toContain("sunny days");
+    expect(JSON.stringify(snapshots)).not.toContain("You are a loser");
+  });
+
+  it("reports zero discovered articles on an empty feed", async () => {
+    document.body.innerHTML = "";
+    await loadContentModule();
+    await settle();
+    const snapshots = localSets
+      .map((items) => items[STATUS_KEY])
+      .filter((value): value is Record<string, unknown> => !!value && typeof value === "object");
+    expect(snapshots.length).toBeGreaterThan(0);
+    const latest = snapshots[snapshots.length - 1] as unknown as { articlesFound: number; evaluated: number };
+    expect(latest.articlesFound).toBe(0);
+    expect(latest.evaluated).toBe(0);
+  });
+
+  it("falls back to defaults and reports it when storage read fails", async () => {
+    const chromeStub = (globalThis as unknown as { chrome: { storage: { sync: { get: unknown } } } }).chrome;
+    chromeStub.storage.sync.get = vi.fn(async () => {
+      throw new Error("storage unavailable");
+    });
+    document.body.innerHTML = fixture();
+    await loadContentModule();
+    const post = byId(MATCHING_POST);
+    await vi.waitFor(() => expect(isHidden(post)).toBe(true));
+    const snapshots = localSets
+      .map((items) => items[STATUS_KEY])
+      .filter((value): value is Record<string, unknown> => !!value && typeof value === "object");
+    const latest = snapshots[snapshots.length - 1] as unknown as { settingsOk: boolean };
+    expect(latest.settingsOk).toBe(false);
+  });
+
+  it("enables diagnostics through the stored flag, without console commands", async () => {
+    document.body.innerHTML = fixture();
+    await loadContentModule();
+    const post = byId(MATCHING_POST);
+    await vi.waitFor(() => expect(isHidden(post)).toBe(true));
+
+    const seen: unknown[][] = [];
+    const spy = vi.spyOn(console, "info").mockImplementation((...args: unknown[]) => {
+      seen.push(args);
+    });
+    try {
+      storedDebug = true;
+      fireStorageChange("local", { [DEBUG_FLAG_KEY]: true });
+      await vi.waitFor(() => {
+        const prefixed = seen.filter(
+          (args) => typeof args[0] === "string" && (args[0] as string).startsWith("[Tathabbut debug]")
+        );
+        expect(prefixed.length).toBeGreaterThan(0);
+      });
+      expect(JSON.stringify(seen)).not.toContain("You are an idiot");
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("debug mode reports stages without logging post text", async () => {
