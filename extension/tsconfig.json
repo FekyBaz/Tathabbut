@@ -8,6 +8,7 @@
     "lib": ["ES2022", "DOM"],
     "types": ["chrome"],
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*.ts", "vite.config.ts"]
