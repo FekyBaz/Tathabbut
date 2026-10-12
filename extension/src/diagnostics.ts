@@ -15,6 +15,8 @@ export interface ContentStatus {
   classified: number;
   hidden: number;
   lastReason: string;
+  /** Hostname only (e.g. www.facebook.com). Never paths or profile names. */
+  origin: string;
   updatedAt: number;
 }
 
@@ -53,4 +55,74 @@ export function isFreshStatus(
   if (!status || typeof status.updatedAt !== "number") return false;
   const age = now - status.updatedAt;
   return Number.isFinite(age) && age >= 0 && age <= maxAgeMs;
+}
+
+export interface StatusView {
+  started: string;
+  settings: string;
+  articles: string;
+  counts: string;
+  reason: string;
+  updated: string;
+  source: string;
+}
+
+const DASH = "—";
+
+/**
+ * Pure presentation mapping for the popup panel, so the "what does the
+ * user see?" logic is unit-tested: missing snapshots, stale snapshots,
+ * and storage failures each produce distinct, honest text. A snapshot can
+ * only be attributed to the most recently writing tab — exact tabs would
+ * need extra browser permissions, so the panel says so instead.
+ */
+export function statusViewModel(
+  input: { snapshot?: ContentStatus; storageError: boolean },
+  now: number = Date.now()
+): StatusView {
+  if (input.storageError) {
+    return {
+      started: "Could not read diagnostic storage on this device.",
+      settings: DASH,
+      articles: DASH,
+      counts: DASH,
+      reason: DASH,
+      updated: DASH,
+      source: DASH
+    };
+  }
+  const snapshot = input.snapshot;
+  if (!snapshot) {
+    return {
+      started: "Not reported yet — open Facebook so the content script can run.",
+      settings: DASH,
+      articles: DASH,
+      counts: DASH,
+      reason: DASH,
+      updated: DASH,
+      source: DASH
+    };
+  }
+  const known: Omit<StatusView, "started" | "settings"> = {
+    articles: String(snapshot.articlesFound),
+    counts: snapshot.evaluated + " / " + snapshot.classified + " / " + snapshot.hidden,
+    reason: describeReason(snapshot.lastReason),
+    updated: formatStatusAge(snapshot.updatedAt, now),
+    source: snapshot.origin || "unknown site"
+  };
+  if (!isFreshStatus(snapshot, now)) {
+    return {
+      ...known,
+      started: "Reported earlier (stale) — open Facebook so the content script can update it.",
+      settings: DASH
+    };
+  }
+  return {
+    ...known,
+    started: "Running since " + new Date(snapshot.startedAt).toLocaleTimeString() + ".",
+    settings: snapshot.settingsOk
+      ? (snapshot.enabled ? "on" : "off") + " · " + snapshot.apiMode + " · " +
+        snapshot.categories + " categories · threshold " + snapshot.threshold
+      : "defaults (storage read failed)"
+  };
 }

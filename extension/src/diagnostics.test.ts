@@ -5,6 +5,7 @@ import {
   describeReason,
   formatStatusAge,
   isFreshStatus,
+  statusViewModel,
   type ContentStatus
 } from "./diagnostics";
 
@@ -21,6 +22,7 @@ function sampleStatus(overrides: Partial<ContentStatus> = {}): ContentStatus {
     classified: 3,
     hidden: 1,
     lastReason: "rule-match",
+    origin: "www.facebook.com",
     updatedAt: 2000,
     ...overrides
   };
@@ -61,5 +63,40 @@ describe("diagnostics helpers", () => {
     expect(isFreshStatus(undefined)).toBe(false);
     expect(isFreshStatus(sampleStatus(), 2000 + 60_000)).toBe(true);
     expect(isFreshStatus(sampleStatus(), 2000 + 6 * 60_000)).toBe(false);
+  });
+});
+
+describe("statusViewModel", () => {
+  it("reports a missing snapshot honestly", () => {
+    const view = statusViewModel({ snapshot: undefined, storageError: false });
+    expect(view.started).toContain("Not reported yet");
+    expect(view.articles).toBe("—");
+  });
+
+  it("reports a storage failure instead of silence", () => {
+    const view = statusViewModel({ snapshot: undefined, storageError: true });
+    expect(view.started).toContain("Could not read diagnostic storage");
+    expect(view.updated).toBe("—");
+  });
+
+  it("labels a stale snapshot as stale while keeping last-known values", () => {
+    const view = statusViewModel(
+      { snapshot: sampleStatus(), storageError: false },
+      2000 + 10 * 60_000
+    );
+    expect(view.started).toContain("stale");
+    expect(view.articles).toBe("3");
+    expect(view.source).toBe("www.facebook.com");
+  });
+
+  it("renders a fresh snapshot with its reporting site", () => {
+    const view = statusViewModel(
+      { snapshot: sampleStatus(), storageError: false },
+      2000 + 10_000
+    );
+    expect(view.started).toContain("Running since");
+    expect(view.settings).toContain("threshold 0.85");
+    expect(view.counts).toBe("3 / 3 / 1");
+    expect(view.source).toBe("www.facebook.com");
   });
 });

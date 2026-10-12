@@ -224,6 +224,8 @@ describe("content lifecycle on feed fixtures", () => {
     expect(latest.classified).toBeGreaterThanOrEqual(3);
     expect(latest.hidden).toBeGreaterThanOrEqual(2);
     expect(typeof latest.lastReason).toBe("string");
+    expect(typeof (latest as unknown as { origin: unknown }).origin).toBe("string");
+    expect((latest as unknown as { origin: string }).origin).not.toContain("/");
     expect(JSON.stringify(snapshots)).not.toContain("You are an idiot");
     expect(JSON.stringify(snapshots)).not.toContain("sunny days");
     expect(JSON.stringify(snapshots)).not.toContain("You are a loser");

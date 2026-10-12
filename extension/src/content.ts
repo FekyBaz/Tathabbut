@@ -39,7 +39,10 @@ const stats: RunStats = {
   lastReason: "starting"
 };
 
+const STATUS_MIN_INTERVAL_MS = 1000;
+
 let lastStatusKey = "";
+let lastStatusWrite = 0;
 
 function currentStatus(): ContentStatus {
   return {
@@ -54,6 +57,7 @@ function currentStatus(): ContentStatus {
     classified: stats.classified,
     hidden: stats.hidden,
     lastReason: stats.lastReason,
+    origin: window.location.hostname,
     updatedAt: Date.now()
   };
 }
@@ -67,8 +71,13 @@ async function persistStatus(force: boolean): Promise<void> {
     const { updatedAt, ...stable } = snapshot;
     void updatedAt;
     const key = JSON.stringify(stable);
-    if (!force && key === lastStatusKey) return;
+    const now = Date.now();
+    if (!force) {
+      if (key === lastStatusKey) return;
+      if (now - lastStatusWrite < STATUS_MIN_INTERVAL_MS) return;
+    }
     lastStatusKey = key;
+    lastStatusWrite = now;
     await chrome.storage.local.set({ [STATUS_KEY]: snapshot });
   } catch {
     // Diagnostics must never break filtering.
@@ -207,7 +216,7 @@ export function applyResult(element: Element, result: Classification): void {
   element.prepend(button);
   stats.hidden += 1;
   stats.lastReason = decision.reason;
-  void persistStatus(false);
+  void persistStatus(true);
   debugLog("decision", {
     decision: "hidden",
     reason: decision.reason,

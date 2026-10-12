@@ -8,7 +8,7 @@ start with the popup — no console commands needed.
 1. Open the Tathabbut popup and scroll to **Diagnostics**.
 2. Tick **Enable diagnostic mode (this device only)**. The content script
    picks the flag up automatically; reload Facebook for a full trace.
-3. Click **Refresh status** and read the panel:
+3. Click **Refresh status** and read the panel (it also shows which site reported, and how old the report is):
    - **Content script**: running since when, or "not reported yet".
    - **Settings**: effective on/off, local/remote mode, categories, threshold.
    - **Articles found**: `[role="article"]` elements in the last scan.
@@ -47,6 +47,13 @@ Stock local scores top out at **0.90** (0.86 for most categories), so a
   `role="article"` are skipped by design).
 - `below-threshold` → lower the threshold (e.g. 85%) for stock rules.
 - `hidden` logged but nothing visibly changes → CSS/rendering issue.
+
+## Limits of the panel
+
+- With several Facebook tabs open, the panel reflects the **most recently
+  updated tab**. Pinpointing the exact tab would need extra browser
+  permissions, which this extension does not request.
+- A storage failure shows an explicit error row instead of silence.
 
 ## Privacy
 

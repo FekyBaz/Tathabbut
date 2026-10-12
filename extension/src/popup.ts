@@ -1,6 +1,6 @@
 import { DEFAULT_SETTINGS, type Category, type UserSettings } from "./policy";
 import { apiPermissionPattern, normalizeApiUrl } from "./remote-api";
-import { DEBUG_FLAG_KEY, STATUS_KEY, describeReason, formatStatusAge, isFreshStatus, type ContentStatus } from "./diagnostics";
+import { DEBUG_FLAG_KEY, STATUS_KEY, statusViewModel, type ContentStatus } from "./diagnostics";
 
 const byId = <T extends HTMLElement>(id: string): T => {
   const element = document.getElementById(id);
@@ -19,6 +19,7 @@ const stArticles = byId<HTMLElement>("st-articles");
 const stCounts = byId<HTMLElement>("st-counts");
 const stReason = byId<HTMLElement>("st-reason");
 const stUpdated = byId<HTMLElement>("st-updated");
+const stSource = byId<HTMLElement>("st-source");
 
 function selectedCategories(): Category[] {
   return Array.from(document.querySelectorAll<HTMLInputElement>('input[name="category"]:checked'))
@@ -30,43 +31,28 @@ function reflectThreshold(): void {
 }
 threshold.addEventListener("input", reflectThreshold);
 
-async function readStatus(): Promise<ContentStatus | undefined> {
+async function readStatus(): Promise<{ snapshot?: ContentStatus; storageError: boolean }> {
   try {
     const stored = await chrome.storage.local.get(STATUS_KEY);
     const snapshot = stored[STATUS_KEY] as ContentStatus | undefined;
-    if (!snapshot || typeof snapshot !== "object" || typeof snapshot.updatedAt !== "number") return undefined;
-    return snapshot;
+    if (!snapshot || typeof snapshot !== "object" || typeof snapshot.updatedAt !== "number") {
+      return { snapshot: undefined, storageError: false };
+    }
+    return { snapshot, storageError: false };
   } catch {
-    return undefined;
+    return { snapshot: undefined, storageError: true };
   }
 }
 
-function renderStatus(snapshot: ContentStatus | undefined): void {
-  if (!snapshot || !isFreshStatus(snapshot)) {
-    stStarted.textContent = snapshot
-      ? "Reported earlier (stale) — open Facebook so the content script can update it."
-      : "Not reported yet — open Facebook so the content script can run.";
-    stSettings.textContent = "—";
-    stArticles.textContent = "—";
-    stCounts.textContent = "—";
-    stReason.textContent = "—";
-    stUpdated.textContent = snapshot ? formatStatusAge(snapshot.updatedAt) : "—";
-    if (snapshot) {
-      stArticles.textContent = String(snapshot.articlesFound);
-      stCounts.textContent = snapshot.evaluated + " / " + snapshot.classified + " / " + snapshot.hidden;
-      stReason.textContent = describeReason(snapshot.lastReason);
-    }
-    return;
-  }
-  stStarted.textContent = "Running since " + new Date(snapshot.startedAt).toLocaleTimeString() + ".";
-  stSettings.textContent = snapshot.settingsOk
-    ? (snapshot.enabled ? "on" : "off") + " · " + snapshot.apiMode + " · " +
-      snapshot.categories + " categories · threshold " + snapshot.threshold
-    : "defaults (storage read failed)";
-  stArticles.textContent = String(snapshot.articlesFound);
-  stCounts.textContent = snapshot.evaluated + " / " + snapshot.classified + " / " + snapshot.hidden;
-  stReason.textContent = describeReason(snapshot.lastReason);
-  stUpdated.textContent = formatStatusAge(snapshot.updatedAt);
+function renderStatus(input: { snapshot?: ContentStatus; storageError: boolean }): void {
+  const view = statusViewModel(input);
+  stStarted.textContent = view.started;
+  stSettings.textContent = view.settings;
+  stArticles.textContent = view.articles;
+  stCounts.textContent = view.counts;
+  stReason.textContent = view.reason;
+  stUpdated.textContent = view.updated;
+  stSource.textContent = view.source;
 }
 
 async function loadDiagnostics(): Promise<void> {
@@ -103,10 +89,10 @@ async function load(): Promise<void> {
       input.checked = value.enabledCategories.includes(input.value as Category);
     });
     reflectThreshold();
-    await loadDiagnostics();
   } catch {
     status.textContent = "Could not load settings; defaults are active.";
   }
+  await loadDiagnostics();
 }
 
 byId<HTMLButtonElement>("save").addEventListener("click", async () => {
