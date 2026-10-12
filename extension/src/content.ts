@@ -1,4 +1,5 @@
 import { CATEGORIES, DEFAULT_SETTINGS, classifyLocally, isUsableRemoteClassification, shouldHide, type Category, type Classification, type LabelScore, type UserSettings } from "./policy";
+import { DEBUG_FLAG_KEY, STATUS_KEY, type ContentStatus } from "./diagnostics";
 import { BoundedTaskQueue, fingerprintText, normalizeText } from "./text-engine";
 
 const ARTICLE_SELECTOR = '[role="article"]';
@@ -14,6 +15,65 @@ interface ItemState {
 }
 const itemStates = new WeakMap<Element, ItemState>();
 const queue = new BoundedTaskQueue(2, MAX_QUEUED_ITEMS);
+
+// Writes go out only when the meaningful fields change (updatedAt alone
+// does not count), plus forced writes at startup and after settings load.
+
+interface RunStats {
+  startedAt: number;
+  settingsOk: boolean;
+  articlesFound: number;
+  evaluated: number;
+  classified: number;
+  hidden: number;
+  lastReason: string;
+}
+
+const stats: RunStats = {
+  startedAt: Date.now(),
+  settingsOk: true,
+  articlesFound: 0,
+  evaluated: 0,
+  classified: 0,
+  hidden: 0,
+  lastReason: "starting"
+};
+
+let lastStatusKey = "";
+
+function currentStatus(): ContentStatus {
+  return {
+    startedAt: stats.startedAt,
+    settingsOk: stats.settingsOk,
+    enabled: settings.enabled,
+    threshold: settings.threshold,
+    categories: settings.enabledCategories.length,
+    apiMode: settings.apiUrl ? "remote" : "local",
+    articlesFound: stats.articlesFound,
+    evaluated: stats.evaluated,
+    classified: stats.classified,
+    hidden: stats.hidden,
+    lastReason: stats.lastReason,
+    updatedAt: Date.now()
+  };
+}
+
+// Best-effort, device-local snapshot for the popup status panel.
+// Metadata only: counters, settings state, and outcome reasons.
+// Never post text, names, or URLs. No network involved.
+async function persistStatus(force: boolean): Promise<void> {
+  try {
+    const snapshot = currentStatus();
+    const { updatedAt, ...stable } = snapshot;
+    void updatedAt;
+    const key = JSON.stringify(stable);
+    if (!force && key === lastStatusKey) return;
+    lastStatusKey = key;
+    await chrome.storage.local.set({ [STATUS_KEY]: snapshot });
+  } catch {
+    // Diagnostics must never break filtering.
+  }
+}
 
 const DEBUG_PREFIX = "[Tathabbut debug]";
 let debugEnabled = readLocalDebugFlag();
@@ -128,6 +188,8 @@ export function applyResult(element: Element, result: Classification): void {
       reason: decision.reason,
       fingerprint
     };
+    stats.lastReason = decision.reason;
+    void persistStatus(false);
     if (decision.category !== undefined) details.category = decision.category;
     if (decision.score !== undefined) details.score = decision.score;
     debugLog("decision", details);
@@ -143,6 +205,9 @@ export function applyResult(element: Element, result: Classification): void {
   button.setAttribute("aria-label", "Reveal content hidden by Tathabbut");
   button.addEventListener("click", () => reveal(element), { once: true });
   element.prepend(button);
+  stats.hidden += 1;
+  stats.lastReason = decision.reason;
+  void persistStatus(false);
   debugLog("decision", {
     decision: "hidden",
     reason: decision.reason,
@@ -154,8 +219,11 @@ export function applyResult(element: Element, result: Classification): void {
 
 export function evaluate(element: Element): void {
   if (!(element instanceof HTMLElement) || !element.isConnected) return;
+  stats.evaluated += 1;
   if (!settings.enabled) {
     reveal(element);
+    stats.lastReason = "filter-disabled";
+    void persistStatus(false);
     debugLog("skip", { reason: "filter-disabled" });
     return;
   }
@@ -164,6 +232,8 @@ export function evaluate(element: Element): void {
   if (!text) {
     itemStates.delete(element);
     reveal(element);
+    stats.lastReason = "empty-text";
+    void persistStatus(false);
     debugLog("skip", { reason: "empty-text" });
     return;
   }
@@ -171,6 +241,8 @@ export function evaluate(element: Element): void {
   const fingerprint = fingerprintText(text);
   const previous = itemStates.get(element);
   if (previous?.fingerprint === fingerprint && previous.settingsVersion === settingsVersion) {
+    stats.lastReason = "unchanged";
+    void persistStatus(false);
     debugLog("skip", { reason: "unchanged", fingerprint });
     return;
   }
@@ -182,6 +254,7 @@ export function evaluate(element: Element): void {
 
   const accepted = queue.enqueue(async () => {
     const result = await classify(text);
+    stats.classified += 1;
     const latest = itemStates.get(element);
     if (!element.isConnected ||
         latest?.fingerprint !== fingerprint ||
@@ -193,12 +266,16 @@ export function evaluate(element: Element): void {
   // If the bounded queue is saturated, allow a later DOM change or settings update to retry.
   if (!accepted) {
     itemStates.delete(element);
+    stats.lastReason = "queue-full";
+    void persistStatus(false);
     debugLog("skip", { reason: "queue-full", fingerprint });
   }
 }
 
 export function scan(): void {
   const found = Array.from(document.querySelectorAll(ARTICLE_SELECTOR));
+  stats.articlesFound = found.length;
+  void persistStatus(false);
   debugLog("scan", { articles: found.length });
   for (const element of found) evaluate(element);
 }
@@ -221,8 +298,15 @@ function processMutations(records: MutationRecord[]): void {
 async function loadSettings(): Promise<void> {
   let storedDebug: unknown = false;
   try {
-    const stored = await chrome.storage.sync.get(["tathabbutSettings", "tathabbutDebug"]);
-    storedDebug = stored.tathabbutDebug;
+    const stored = await chrome.storage.sync.get("tathabbutSettings");
+    let localDebug: unknown = false;
+    try {
+      const localStored = await chrome.storage.local.get(DEBUG_FLAG_KEY);
+      localDebug = localStored[DEBUG_FLAG_KEY];
+      storedDebug = localDebug;
+    } catch {
+      // A missing local flag simply leaves diagnostics off.
+    }
     const candidate = stored.tathabbutSettings as Partial<UserSettings> | undefined;
     if (candidate && typeof candidate === "object") {
       settings = {
@@ -240,9 +324,11 @@ async function loadSettings(): Promise<void> {
     }
   } catch {
     // Keep safe local defaults if extension storage is unavailable.
+    stats.settingsOk = false;
   }
 
   debugEnabled = storedDebug === true || readLocalDebugFlag();
+  void persistStatus(true);
 
   settingsVersion += 1;
   debugLog("settings", {
@@ -266,6 +352,8 @@ observer.observe(document.documentElement, {
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "sync" && changes.tathabbutSettings) void loadSettings();
+  else if (areaName === "local" && changes[DEBUG_FLAG_KEY]) void loadSettings();
 });
 
+void persistStatus(true);
 debugLog("loaded", { topFrame: window.top === window });

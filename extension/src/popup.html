@@ -14,6 +14,10 @@
       button { padding: 8px 12px; cursor: pointer; }
       .row { display: flex; align-items: center; gap: 8px; }
       #status { min-height: 1.4em; }
+      .diag { margin: 8px 0; }
+      .diag > div { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+      .diag dt { color: #5b6470; }
+      .diag dd { margin: 0; text-align: end; }
       fieldset { border: 1px solid #c6cbd1; border-radius: 8px; margin: 12px 0; }
     </style>
   </head>
@@ -35,6 +39,20 @@
     <p class="muted">Enter the origin only; /v1/classify is appended automatically. Leave blank for local-only mode. HTTPS is required except for localhost. You will be asked to grant access to this host. Never paste provider API keys here.</p>
     <button id="save" type="button">Save settings</button>
     <p id="status" role="status" aria-live="polite"></p>
+    <fieldset>
+      <legend>Diagnostics</legend>
+      <label class="row"><input id="debug" type="checkbox" /> Enable diagnostic mode (this device only)</label>
+      <p class="muted">Shows whether the content script runs and what it finds. Counts and reasons only — never post text or names, and nothing leaves this device.</p>
+      <dl class="diag">
+        <div><dt>Content script</dt><dd id="st-started">—</dd></div>
+        <div><dt>Settings</dt><dd id="st-settings">—</dd></div>
+        <div><dt>Articles found</dt><dd id="st-articles">—</dd></div>
+        <div><dt>Evaluated / classified / hidden</dt><dd id="st-counts">—</dd></div>
+        <div><dt>Last outcome</dt><dd id="st-reason">—</dd></div>
+        <div><dt>Status updated</dt><dd id="st-updated">—</dd></div>
+      </dl>
+      <button id="refreshStatus" type="button">Refresh status</button>
+    </fieldset>
     <script type="module" src="popup.js"></script>
   </body>
 </html>
