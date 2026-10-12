@@ -56,7 +56,7 @@ const patterns: Record<Category, RegExp[]> = {
   spam: [
     /\b(?:dm me to claim|guaranteed profit|claim your prize now)\b/i,
     /(?:https?:\/\/\S+\s*){4,}/i,
-    /(?:^|[\s،,.!?؟])(?:ابعتلي خاص عشان تكسب|اربح الجائزة الآن|مبروك كسبت الجائزة)(?=$|[\s،,.!?؟])/u
+    /(?:^|[\s،,.!?؟])(?:ابعتلي خاص عشان تكسب|اربح الجائزة الان|مبروك كسبت الجائزة)(?=$|[\s،,.!?؟])/u
   ]
 };
 
@@ -78,6 +78,8 @@ export function shouldHide(result: Classification, settings: UserSettings): bool
     CATEGORIES.includes(label.category) &&
     settings.enabledCategories.includes(label.category) &&
     Number.isFinite(label.score) &&
+    label.score >= 0 &&
+    label.score <= 1 &&
     label.score >= settings.threshold
   );
 }

@@ -42,3 +42,29 @@ it("rejects unknown remote categories and invalid scores", () => {
   expect(isUsableRemoteClassification({ labels: [{ category: "misinformation", score: 0.9 }], provider: "test" })).toBe(false);
   expect(isUsableRemoteClassification({ labels: [{ category: "spam", score: 8 }], provider: "test" })).toBe(false);
 });
+
+describe("regression and decision boundaries", () => {
+  it("flags the hamza spelling of the prize-spam phrase after normalization", () => {
+    expect(classifyLocally("\u0627\u0631\u0628\u062d \u0627\u0644\u062c\u0627\u0626\u0632\u0629 \u0627\u0644\u0622\u0646").labels.map((label) => label.category)).toContain("spam");
+  });
+  it("flags plain and alef-variant Arabic insult spellings", () => {
+    for (const text of ["\u0627\u0646\u062a \u063a\u0628\u064a", "\u0623\u0646\u062a \u063a\u0628\u064a", "\u0625\u0646\u062a\u064e \u063a\u064e\u0628\u0650\u064a"]) {
+      expect(classifyLocally(text).labels.map((label) => label.category)).toContain("harassment");
+    }
+  });
+  it("applies the threshold as an inclusive boundary", () => {
+    expect(shouldHide({ labels: [{ category: "harassment", score: 0.85 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+    expect(shouldHide({ labels: [{ category: "harassment", score: 0.85 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: 0.86 })).toBe(false);
+  });
+  it("refuses invalid thresholds and out-of-range scores", () => {
+    expect(shouldHide({ labels: [{ category: "harassment", score: 0.99 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: Number.NaN })).toBe(false);
+    expect(shouldHide({ labels: [{ category: "harassment", score: 2 }], provider: "test" }, DEFAULT_SETTINGS)).toBe(false);
+    expect(shouldHide({ labels: [{ category: "harassment", score: Number.NaN }], provider: "test" }, DEFAULT_SETTINGS)).toBe(false);
+    expect(shouldHide({ labels: [{ category: "harassment", score: 0.99 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: 2 })).toBe(false);
+  });
+  it("ignores disabled categories and malformed remote payloads", () => {
+    expect(shouldHide({ labels: [{ category: "spam", score: 0.99 }], provider: "test" }, { ...DEFAULT_SETTINGS, enabledCategories: ["harassment"] })).toBe(false);
+    expect(isUsableRemoteClassification({ labels: [{ category: "harassment", score: Number.NaN }], provider: "test" })).toBe(false);
+    expect(isUsableRemoteClassification({ labels: [], provider: 42 })).toBe(false);
+  });
+});
