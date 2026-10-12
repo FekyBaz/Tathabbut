@@ -2,8 +2,12 @@
   position: relative !important;
   max-height: 3.25rem !important;
   overflow: hidden !important;
+}
+.tathabbut-hidden > :not(.tathabbut-reveal) {
   opacity: 0.28 !important;
   filter: blur(3px);
+  pointer-events: none !important;
+  user-select: none !important;
 }
 .tathabbut-reveal {
   position: relative;
@@ -18,4 +22,8 @@
   filter: none;
   opacity: 1;
   cursor: pointer;
+}
+.tathabbut-reveal:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
