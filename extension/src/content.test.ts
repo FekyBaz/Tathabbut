@@ -11,6 +11,7 @@ const CLEAN_POST = "post-clean";
 const NESTED_PARENT = "post-nested";
 const NESTED_CHILD = "comment-nested";
 const STANDALONE_COMMENT = "comment-only";
+const STANDALONE_THREAT = "threat-only";
 
 function fixture(): string {
   return (
@@ -18,8 +19,9 @@ function fixture(): string {
     '<div role="article" id="' + MATCHING_POST + '"><div class="post-body">You are an idiot</div></div>' +
     '<div role="article" id="' + CLEAN_POST + '"><div class="post-body">I love sunny days and long walks.</div></div>' +
     '<div role="article" id="' + NESTED_PARENT + '"><div class="post-body">Great match today!</div>' +
-    '<div role="article" id="comment-nested"><span>You are a loser</span></div></div>' +
+    '<div class="comment" id="comment-nested"><span>You are a loser</span></div></div>' +
     '<div class="comment" id="' + STANDALONE_COMMENT + '"><span>Shut up, you are pathetic</span></div>' +
+    '<div class="comment" id="' + STANDALONE_THREAT + '"><span>سوف اقتلك</span></div>' +
     "</div>"
   );
 }
@@ -153,13 +155,15 @@ describe("content lifecycle on feed fixtures", () => {
     expect(revealButtons(comment)).toBe(1);
   });
 
-  it("skips a standalone comment without an article role", async () => {
+  it("hides semantic comments without an article role, including the exact Arabic threat", async () => {
     document.body.innerHTML = fixture();
     await loadContentModule();
     const comment = byId(STANDALONE_COMMENT);
-    await settle();
-    expect(isHidden(comment)).toBe(false);
-    expect(revealButtons(comment)).toBe(0);
+    const threat = byId(STANDALONE_THREAT);
+    await vi.waitFor(() => expect(isHidden(comment)).toBe(true));
+    await vi.waitFor(() => expect(isHidden(threat)).toBe(true));
+    expect(revealButtons(comment)).toBe(1);
+    expect(revealButtons(threat)).toBe(1);
   });
 
   it("hides nothing matching at a 99% threshold with stock rule scores", async () => {
@@ -225,7 +229,7 @@ describe("content lifecycle on feed fixtures", () => {
     };
     expect(typeof latest.startedAt).toBe("number");
     expect(latest.settingsOk).toBe(true);
-    expect(latest.articlesFound).toBe(4);
+    expect(latest.articlesFound).toBe(6);
     expect(latest.classified).toBeGreaterThanOrEqual(3);
     expect(latest.hidden).toBeGreaterThanOrEqual(2);
     expect(typeof latest.lastReason).toBe("string");
