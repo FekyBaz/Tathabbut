@@ -12,7 +12,9 @@ loads the unpacked `dist/` into Chromium via Playwright, serves the
 `scenarios.html` fixture matrix under facebook.com hostnames, and drives
 discovery, classification, threshold, hide/reveal, dynamic-insert,
 replace, move, rapid-edit, delayed-fill, remove-reinsert,
-reveal-persistence, text-edit, and live-settings scenarios, plus a
+reveal-persistence, text-edit, and live-settings scenarios, empty-first
+discovery versus delayed insertion, unreachable/invalid-API local fallback
+with policy composition and zero mock-host traffic, plus a
 local-only network-confinement check. It exits non-zero on failure and
 writes `smoke/lab-report.json` (git-ignored) plus a console summary.
 

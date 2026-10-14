@@ -99,6 +99,12 @@ def main():
 
     with open(FIXTURE, encoding="utf-8") as f:
         fixture_html = f.read()
+    served = {"html": fixture_html}
+    EMPTY_HTML = (
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\" />"
+        "<title>Empty feed</title></head>"
+        "<body><div id=\"feed\"></div></body></html>"
+    )
 
     try:
         with sync_playwright() as p:
@@ -131,7 +137,7 @@ def main():
                     page.on("request", lambda req: seen_urls.append(req.url))
                     page.route(
                         "https://*.facebook.com/*",
-                        lambda route: route.fulfill(body=fixture_html, content_type="text/html"),
+                        lambda route: route.fulfill(body=served["html"], content_type="text/html"),
                     )
                     failures_before = len([s for s in report["scenarios"] if not s["pass"]])
 
@@ -390,6 +396,144 @@ def main():
                     check("status-origin-" + tag, "diagnostics", True,
                           "facebook.com" in str(status.get("origin", "")))
                     page.close()
+
+                def read_status():
+                    raw = sw.evaluate(
+                        "chrome.storage.local.get('tathabbutStatus').then(r => JSON.stringify(r))"
+                    )
+                    return json.loads(raw).get("tathabbutStatus", {})
+
+                def set_api_settings(api_url, extra=None):
+                    cfg = dict(DEFAULT_SETTINGS)
+                    cfg["apiUrl"] = api_url
+                    if extra:
+                        cfg.update(extra)
+                    sw.evaluate(
+                        "cfg => chrome.storage.sync.set({tathabbutSettings: cfg}).then(() => 'ok')",
+                        cfg,
+                    )
+
+                def wait_status(predicate, timeout=15000):
+                    import time as _time
+
+                    deadline = _time.time() + timeout / 1000
+                    last = {}
+                    while _time.time() < deadline:
+                        try:
+                            last = read_status()
+                            if predicate(last):
+                                return last
+                        except Exception:
+                            pass
+                        _time.sleep(0.25)
+                    return last
+
+                context_urls: list = []
+                ctx.on("request", lambda req: context_urls.append(req.url))
+
+                # --- Phase F1: unreachable API falls back to local rules. ---
+                # No host permission is ever granted here, and the port is
+                # closed, so the worker must refuse before fetching; the page
+                # must still hide stock-rule matches with zero mock traffic.
+                set_api_settings("http://127.0.0.1:9")
+                served["html"] = fixture_html
+                fb_page = ctx.new_page()
+                fb_page.route(
+                    "https://*.facebook.com/*",
+                    lambda route: route.fulfill(body=served["html"], content_type="text/html"),
+                )
+                fb_page.goto("https://www.facebook.com/", wait_until="domcontentloaded")
+                try:
+                    fb_page.wait_for_selector("#en-harass.tathabbut-hidden", timeout=15000)
+                    check("fallback-unreachable-hides", "threshold", True, True)
+                except Exception:
+                    check("fallback-unreachable-hides", "threshold", True, False,
+                          "local fallback did not hide a stock-rule match")
+                check("fallback-unreachable-no-traffic", "privacy", True,
+                      not [u for u in context_urls if "127.0.0.1:9" in u],
+                      "mock host requests must be zero without a grant")
+
+                # --- Phase F2: category policy wins even during fallback. ---
+                set_api_settings("http://127.0.0.1:9", {"enabledCategories": ["spam"]})
+                fb_page.reload(wait_until="domcontentloaded")
+                try:
+                    fb_page.wait_for_function(
+                        "document.querySelectorAll('#en-harass.tathabbut-hidden').length === 0",
+                        timeout=10000,
+                    )
+                    check("fallback-category-off", "threshold", False,
+                          fb_page.locator("#en-harass.tathabbut-hidden").count() == 1)
+                except Exception:
+                    check("fallback-category-off", "threshold", False, False,
+                          "category-off not honored during fallback")
+
+                # --- Phase F3: garbage API URL falls back safely. ---
+                set_api_settings("not a url")
+                fb_page.reload(wait_until="domcontentloaded")
+                try:
+                    fb_page.wait_for_selector("#en-harass.tathabbut-hidden", timeout=15000)
+                    check("fallback-invalid-url-hides", "threshold", True, True)
+                except Exception:
+                    check("fallback-invalid-url-hides", "threshold", True, False)
+
+                # --- Phase F4: reveal still works while fallback is active. ---
+                fb_page.locator("#en-harass > .tathabbut-reveal").click()
+                try:
+                    fb_page.wait_for_function(
+                        "document.querySelectorAll('#en-harass.tathabbut-hidden').length === 0",
+                        timeout=5000,
+                    )
+                    check("fallback-reveal", "reveal", True, True)
+                except Exception:
+                    check("fallback-reveal", "reveal", True, False)
+                set_api_settings("")
+                fb_page.close()
+
+                # --- Phase E: empty first scan vs delayed insertion. ---
+                # An empty feed must report articlesFound 0 with reason
+                # "starting"-adjacent state, not a silent failure; content
+                # arriving later must still be discovered and hidden.
+                served["html"] = EMPTY_HTML
+                empty_page = ctx.new_page()
+                empty_page.route(
+                    "https://*.facebook.com/*",
+                    lambda route: route.fulfill(body=served["html"], content_type="text/html"),
+                )
+                before = read_status().get("updatedAt", 0)
+                empty_page.goto("https://www.facebook.com/", wait_until="domcontentloaded")
+                empty_ok = wait_status(
+                    lambda st: st.get("updatedAt", 0) > before and st.get("articlesFound") == 0
+                )
+                check("empty-scan-zero", "discovery", True, bool(empty_ok),
+                      "scan ran on empty feed" if empty_ok else "no fresh empty scan observed")
+                empty_page.evaluate(
+                    "(() => { const d = document.createElement('div');"
+                    " d.setAttribute('role', 'article'); d.id = 'late-empty';"
+                    " d.textContent = 'You are an idiot';"
+                    " document.getElementById('feed').appendChild(d); })()"
+                )
+                try:
+                    empty_page.wait_for_selector("#late-empty.tathabbut-hidden", timeout=10000)
+                    check("delayed-insertion-hides", "dynamic", True, True)
+                except Exception:
+                    check("delayed-insertion-hides", "dynamic", True, False)
+                empty_page.close()
+                served["html"] = fixture_html
+
+                # Recover to a populated feed so the trailing popup checks
+                # observe a representative end-state, not the empty page.
+                recover_page = ctx.new_page()
+                recover_page.route(
+                    "https://*.facebook.com/*",
+                    lambda route: route.fulfill(body=served["html"], content_type="text/html"),
+                )
+                recover_page.goto("https://www.facebook.com/", wait_until="domcontentloaded")
+                try:
+                    recover_page.wait_for_selector("#en-harass.tathabbut-hidden", timeout=15000)
+                    check("recover-populated-feed", "dynamic", True, True)
+                except Exception:
+                    check("recover-populated-feed", "dynamic", True, False)
+                recover_page.close()
 
                 popup = ctx.new_page()
                 popup.goto("chrome-extension://" + extension_id + "/popup.html")
