@@ -120,8 +120,12 @@ function debugLog(event: string, details?: Record<string, unknown>): void {
 }
 
 export function readText(element: Element): string {
-  // Our own reveal control must not change the fingerprint or trigger a reclassification.
+  // A nested article is a separate content unit. Never let a descendant comment's
+  // text determine the classification of its ancestor post (or vice versa).
+  // Work on a clone so classification never mutates the live page DOM.
   const clone = element.cloneNode(true) as Element;
+  clone.querySelectorAll(ARTICLE_SELECTOR).forEach((nestedArticle) => nestedArticle.remove());
+  // Our own reveal control must not change the fingerprint or trigger a reclassification.
   clone.querySelectorAll(".tathabbut-reveal").forEach((control) => control.remove());
   return normalizeText(clone.textContent ?? "").slice(0, MAX_TEXT_LENGTH);
 }
