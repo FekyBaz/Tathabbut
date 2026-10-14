@@ -2,6 +2,26 @@
 <html lang="en">
 <head><meta charset="utf-8" /><title>Tathabbut lab feed</title></head>
 <body>
+<div role="dialog" aria-label="Post comments" id="fb-comment-modal">
+  <div id="fb-comment-respect" data-testid="comment">
+    <span class="author">Author</span>
+    <div class="comment-body"><span>I respectfully disagree with your opinion.</span></div>
+    <div class="comment-actions"><button type="button">Reply</button></div>
+  </div>
+  <div id="fb-comment-threat" data-testid="comment">
+    <span class="author">Author</span>
+    <div class="comment-body"><span>سوف اقتلك</span></div>
+    <div class="comment-actions"><button type="button">Reply</button></div>
+  </div>
+  <div id="fb-comment-thread" data-testid="comment">
+    <span class="author">Author</span>
+    <div class="comment-body"><span>Thanks for sharing your view.</span></div>
+    <div id="fb-comment-nested-child" data-testid="comment">
+      <span class="author">Reply author</span>
+      <div class="comment-body"><span>You are a loser</span></div>
+    </div>
+  </div>
+</div>
 <div id="feed">
   <div role="article" id="en-harass"><div class="body">You are an idiot</div></div>
   <div role="article" id="ar-harass"><div class="body">انت غبي</div></div>
