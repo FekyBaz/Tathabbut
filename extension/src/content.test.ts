@@ -12,6 +12,7 @@ const NESTED_PARENT = "post-nested";
 const NESTED_CHILD = "comment-nested";
 const STANDALONE_COMMENT = "comment-only";
 const STANDALONE_THREAT = "threat-only";
+const STANDALONE_PARAGRAPH = "paragraph-only";
 
 function fixture(): string {
   return (
@@ -22,6 +23,7 @@ function fixture(): string {
     '<div class="comment" id="comment-nested"><span>You are a loser</span></div></div>' +
     '<div class="comment" id="' + STANDALONE_COMMENT + '"><span>Shut up, you are pathetic</span></div>' +
     '<div class="comment" id="' + STANDALONE_THREAT + '"><span>سوف اقتلك</span></div>' +
+    '<p id="' + STANDALONE_PARAGRAPH + '">You are an idiot</p>' +
     "</div>"
   );
 }
@@ -160,10 +162,18 @@ describe("content lifecycle on feed fixtures", () => {
     await loadContentModule();
     const comment = byId(STANDALONE_COMMENT);
     const threat = byId(STANDALONE_THREAT);
+    const paragraph = byId(STANDALONE_PARAGRAPH);
     await vi.waitFor(() => expect(isHidden(comment)).toBe(true));
     await vi.waitFor(() => expect(isHidden(threat)).toBe(true));
+    await vi.waitFor(() => expect(isHidden(paragraph)).toBe(true));
     expect(revealButtons(comment)).toBe(1);
     expect(revealButtons(threat)).toBe(1);
+    expect(revealButtons(paragraph)).toBe(1);
+    expect(paragraph.querySelector(".tathabbut-hidden-text")?.textContent).toBe("You are an idiot");
+    (paragraph.querySelector(".tathabbut-reveal") as HTMLButtonElement).click();
+    expect(isHidden(paragraph)).toBe(false);
+    expect(paragraph.querySelector(".tathabbut-hidden-text")).toBeNull();
+    expect(paragraph.textContent).toBe("You are an idiot");
   });
 
   it("hides nothing matching at a 99% threshold with stock rule scores", async () => {
@@ -229,7 +239,7 @@ describe("content lifecycle on feed fixtures", () => {
     };
     expect(typeof latest.startedAt).toBe("number");
     expect(latest.settingsOk).toBe(true);
-    expect(latest.articlesFound).toBe(6);
+    expect(latest.articlesFound).toBe(7);
     expect(latest.classified).toBeGreaterThanOrEqual(3);
     expect(latest.hidden).toBeGreaterThanOrEqual(2);
     expect(typeof latest.lastReason).toBe("string");
