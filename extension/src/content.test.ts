@@ -244,7 +244,7 @@ describe("content lifecycle on feed fixtures", () => {
     };
     expect(typeof latest.startedAt).toBe("number");
     expect(latest.settingsOk).toBe(true);
-    expect(latest.articlesFound).toBe(7);
+    expect(latest.articlesFound).toBe(8);
     expect(latest.classified).toBeGreaterThanOrEqual(3);
     expect(latest.hidden).toBeGreaterThanOrEqual(2);
     expect(typeof latest.lastReason).toBe("string");
