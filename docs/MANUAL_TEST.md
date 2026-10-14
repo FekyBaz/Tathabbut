@@ -16,14 +16,58 @@ or public claim.
 - Page: `https://www.facebook.com/` logged into the test profile.
 - Popup: filtering enabled, all four categories on, threshold **85%**.
 
+## First gate: diagnose zero discovered content
+
+If the popup reports `articles found = 0`, do not start tuning the classifier:
+the text engine cannot classify units it never discovers.
+
+1. Open DevTools Console on the Facebook tab and enable diagnostic mode in
+   the popup. Check whether `[Tathabbut debug] loaded` appears.
+2. Run this **counts-only** probe in the page console. It prints selector
+   counts, not post text, author names, or URLs:
+
+   ```js
+   (() => {
+     const selectors = [
+       '[role="article"]',
+       '[role="comment"]',
+       '[data-testid="comment" i]',
+       '[data-testid^="comment-" i]',
+       '.comment',
+       'p',
+       'blockquote',
+       'li',
+       '[role="feed"]',
+       'main'
+     ];
+     return Object.fromEntries(selectors.map(selector => [
+       selector,
+       document.querySelectorAll(selector).length
+     ]));
+   })()
+   ```
+
+3. Check whether the page is still loading, whether the feed is empty, and
+   whether the extension is enabled for the current Facebook host. Repeat
+   the counts after the feed visibly finishes loading.
+4. If `[role="article"]` is zero but other candidates are present, do **not**
+   assume each candidate is a post or comment. Inspect only the structure
+   and attributes of one self-authored test item, then add a narrow selector
+   and a fixture for it. Avoid broad selectors that could classify navigation,
+   sidebars, or the entire comments container as one content unit.
+5. If all candidate counts are zero but content is visibly present, record
+   only the counts above, hostname, browser version, extension commit, and
+   popup status fields. Do not copy page HTML or post content into a report.
+
 ## Scenarios
 
 1. **Injection check.** Open DevTools Console on the feed. With diagnostic
    mode on (popup checkbox), expect `[Tathabbut debug] loaded`. Record
    whether it appears.
-2. **Control positive.** If the feed has no matching content, post a known
-   control phrase from the test profile that matches a documented starter
-   rule, reload, and confirm the item is hidden with a reveal control.
+2. **Control positive.** If the feed has no matching content, create a
+   self-authored test post visible only to you with a known control phrase
+   that matches a documented starter rule, reload, and confirm the item is
+   hidden with a reveal control.
 3. **Control negative.** Confirm a respectful disagreement or neutral post
    stays visible.
 4. **Reveal.** Click the reveal control and confirm the content is restored.
@@ -34,14 +78,15 @@ or public claim.
    stop hiding (higher means stricter); restore 85% afterwards.
 8. **Popup status.** Open the popup, press Refresh status, and record
    articles found, evaluated/classified/hidden, last outcome, and freshness.
-9. **Comments.** Record whether comment threads carry `role="article"`;
-   standalone comments without it are skipped by design.
+9. **Comments.** Record which semantic attributes the self-authored test
+   comments use; standalone comments without a supported unit selector may
+   be skipped until a verified fixture-backed selector is added.
 
 ## Controlled live check (short version)
 
-Use one self-authored test post with four self-authored comments, threshold
-**85%**, all categories on. Record only counts and outcome codes — never
-paste real post text, names, or links into any report.
+Use one self-authored test post visible only to you with four self-authored
+comments, threshold **85%**, all categories on. Record only counts and
+outcome codes — never paste real post text, names, or links into any report.
 
 Expected starter-rule outcomes (current narrow rules, by design):
 
