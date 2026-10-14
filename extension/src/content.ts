@@ -3,6 +3,11 @@ import { DEBUG_FLAG_KEY, STATUS_KEY, type ContentStatus } from "./diagnostics";
 import { BoundedTaskQueue, fingerprintText, normalizeText } from "./text-engine";
 
 const ARTICLE_SELECTOR = '[role="article"]';
+// Semantic fallback units cover common web comments and standalone text blocks
+// when a site does not expose role="article". Keep this list conservative.
+const COMMENT_SELECTOR = '[role="comment"], [data-testid*="comment" i], .comment';
+const STANDALONE_TEXT_SELECTOR = 'p, blockquote, li';
+const CONTENT_UNIT_SELECTOR = ARTICLE_SELECTOR + ", " + COMMENT_SELECTOR + ", " + STANDALONE_TEXT_SELECTOR;
 const HIDDEN_CLASS = "tathabbut-hidden";
 const MAX_TEXT_LENGTH = 4000;
 const MAX_QUEUED_ITEMS = 200;
@@ -120,28 +125,46 @@ function debugLog(event: string, details?: Record<string, unknown>): void {
 }
 
 export function readText(element: Element): string {
-  // A nested article is a separate content unit. Never let a descendant comment's
-  // text determine the classification of its ancestor post (or vice versa).
-  // Work on a clone so classification never mutates the live page DOM.
+  // Do not mix the text of a post with separately represented comments.
+  // Cloning also ensures extraction never mutates the live page DOM.
   const clone = element.cloneNode(true) as Element;
-  clone.querySelectorAll(ARTICLE_SELECTOR).forEach((nestedArticle) => nestedArticle.remove());
-  // Our own reveal control must not change the fingerprint or trigger a reclassification.
-  clone.querySelectorAll(".tathabbut-reveal").forEach((control) => control.remove());
+  clone.querySelectorAll(ARTICLE_SELECTOR + ", " + COMMENT_SELECTOR + ", .tathabbut-reveal")
+    .forEach((nestedUnit) => nestedUnit.remove());
   return normalizeText(clone.textContent ?? "").slice(0, MAX_TEXT_LENGTH);
 }
 
-function articleFor(node: Node): Element | null {
-  const element = node instanceof Element ? node : node.parentElement;
-  if (!element) return null;
-  if (element.matches(ARTICLE_SELECTOR)) return element;
-  return element.closest(ARTICLE_SELECTOR);
+function isStandaloneTextBlock(element: Element): boolean {
+  return element.matches(STANDALONE_TEXT_SELECTOR) &&
+    !element.closest(ARTICLE_SELECTOR) &&
+    !element.closest(COMMENT_SELECTOR);
 }
 
-function articlesWithin(node: Node): Element[] {
+function discoverUnits(root: ParentNode = document): Element[] {
+  const found = new Set<Element>();
+  root.querySelectorAll(ARTICLE_SELECTOR + ", " + COMMENT_SELECTOR).forEach((element) => found.add(element));
+  root.querySelectorAll(STANDALONE_TEXT_SELECTOR).forEach((element) => {
+    if (isStandaloneTextBlock(element)) found.add(element);
+  });
+  return Array.from(found);
+}
+
+function contentUnitFor(node: Node): Element | null {
+  const element = node instanceof Element ? node : node.parentElement;
+  if (!element) return null;
+  const closestUnit = element.closest(CONTENT_UNIT_SELECTOR);
+  if (!closestUnit) return null;
+  if (closestUnit.matches(STANDALONE_TEXT_SELECTOR) && !isStandaloneTextBlock(closestUnit)) {
+    return closestUnit.closest(ARTICLE_SELECTOR + ", " + COMMENT_SELECTOR);
+  }
+  return closestUnit;
+}
+
+function unitsWithin(node: Node): Element[] {
   if (!(node instanceof Element)) return [];
-  const found = Array.from(node.querySelectorAll(ARTICLE_SELECTOR));
-  if (node.matches(ARTICLE_SELECTOR)) found.unshift(node);
-  return found;
+  const found = discoverUnits(node);
+  if (node.matches(ARTICLE_SELECTOR + ", " + COMMENT_SELECTOR) ||
+      isStandaloneTextBlock(node)) found.unshift(node);
+  return [...new Set(found)];
 }
 
 async function classify(text: string): Promise<Classification> {
@@ -310,7 +333,7 @@ export function evaluate(element: Element): void {
 }
 
 export function scan(): void {
-  const found = Array.from(document.querySelectorAll(ARTICLE_SELECTOR));
+  const found = discoverUnits();
   stats.articlesFound = found.length;
   void persistStatus(false);
   debugLog("scan", { articles: found.length });
@@ -320,12 +343,12 @@ export function scan(): void {
 function processMutations(records: MutationRecord[]): void {
   const affected = new Set<Element>();
   for (const record of records) {
-    const parentArticle = articleFor(record.target);
-    if (parentArticle) affected.add(parentArticle);
+    const parentUnit = contentUnitFor(record.target);
+    if (parentUnit) affected.add(parentUnit);
     for (const addedNode of Array.from(record.addedNodes)) {
-      const containingArticle = articleFor(addedNode);
-      if (containingArticle) affected.add(containingArticle);
-      for (const nestedArticle of articlesWithin(addedNode)) affected.add(nestedArticle);
+      const containingUnit = contentUnitFor(addedNode);
+      if (containingUnit) affected.add(containingUnit);
+      for (const nestedUnit of unitsWithin(addedNode)) affected.add(nestedUnit);
     }
   }
   debugLog("mutations", { batches: records.length, affected: affected.size });
