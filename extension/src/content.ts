@@ -190,10 +190,23 @@ async function classify(text: string): Promise<Classification> {
   debugLog("classify", { mode: "remote-fallback-local", labels: localResult.labels.length });
   return localResult;
 }
+function wrapDirectTextNodes(element: Element): void {
+  for (const node of Array.from(element.childNodes)) {
+    if (node.nodeType !== Node.TEXT_NODE || !node.textContent?.trim()) continue;
+    const wrapper = document.createElement("span");
+    wrapper.className = "tathabbut-hidden-text";
+    wrapper.textContent = node.textContent;
+    element.replaceChild(wrapper, node);
+  }
+}
+
 export function reveal(element: Element): void {
   element.classList.remove(HIDDEN_CLASS);
   element.removeAttribute("data-tathabbut-hidden");
   element.querySelectorAll(":scope > .tathabbut-reveal").forEach((button) => button.remove());
+  element.querySelectorAll(".tathabbut-hidden-text").forEach((wrapper) => {
+    wrapper.replaceWith(document.createTextNode(wrapper.textContent ?? ""));
+  });
 }
 
 interface Decision {
@@ -247,6 +260,9 @@ export function applyResult(element: Element, result: Classification): void {
     return;
   }
   if (element.getAttribute("data-tathabbut-hidden") === "true") return;
+  // Text-only blocks (for example a standalone <p>) need a wrapper so CSS can
+  // blur their text without blurring the reveal control or hiding sibling content.
+  wrapDirectTextNodes(element);
   element.classList.add(HIDDEN_CLASS);
   element.setAttribute("data-tathabbut-hidden", "true");
   const button = document.createElement("button");
