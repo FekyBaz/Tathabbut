@@ -225,6 +225,17 @@ describe("content lifecycle on feed fixtures", () => {
     expect(latest.hidden).toBeGreaterThanOrEqual(2);
     expect(typeof latest.lastReason).toBe("string");
     expect(typeof (latest as unknown as { skipped: unknown }).skipped).toBe("number");
+    expect((latest as unknown as { skippedUnchanged: number }).skippedUnchanged).toBeGreaterThanOrEqual(0);
+    expect((latest as unknown as { skippedEmpty: number }).skippedEmpty).toBeGreaterThanOrEqual(0);
+    // Re-evaluations triggered by our own reveal-button insertions must
+    // surface as unchanged skips, never as new submissions.
+    await vi.waitFor(() => {
+      const settled = localSets
+        .map((items) => items[STATUS_KEY])
+        .filter((value): value is Record<string, unknown> => !!value && typeof value === "object");
+      const current = settled[settled.length - 1] as unknown as { skippedUnchanged: number };
+      expect(current.skippedUnchanged).toBeGreaterThanOrEqual(1);
+    });
     expect(typeof (latest as unknown as { origin: unknown }).origin).toBe("string");
     expect((latest as unknown as { origin: string }).origin).not.toContain("/");
     expect(JSON.stringify(snapshots)).not.toContain("You are an idiot");

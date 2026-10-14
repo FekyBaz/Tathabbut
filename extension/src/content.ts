@@ -27,6 +27,10 @@ interface RunStats {
   classified: number;
   hidden: number;
   skipped: number;
+  skippedUnchanged: number;
+  skippedEmpty: number;
+  skippedDisabled: number;
+  skippedQueueFull: number;
   lastReason: string;
 }
 
@@ -38,6 +42,10 @@ const stats: RunStats = {
   classified: 0,
   hidden: 0,
   skipped: 0,
+  skippedUnchanged: 0,
+  skippedEmpty: 0,
+  skippedDisabled: 0,
+  skippedQueueFull: 0,
   lastReason: "starting"
 };
 
@@ -59,6 +67,10 @@ function currentStatus(): ContentStatus {
     classified: stats.classified,
     hidden: stats.hidden,
     skipped: stats.skipped,
+    skippedUnchanged: stats.skippedUnchanged,
+    skippedEmpty: stats.skippedEmpty,
+    skippedDisabled: stats.skippedDisabled,
+    skippedQueueFull: stats.skippedQueueFull,
     lastReason: stats.lastReason,
     origin: window.location.hostname,
     updatedAt: Date.now()
@@ -234,6 +246,7 @@ export function evaluate(element: Element): void {
   if (!settings.enabled) {
     reveal(element);
     stats.skipped += 1;
+    stats.skippedDisabled += 1;
     stats.lastReason = "filter-disabled";
     void persistStatus(false);
     debugLog("skip", { reason: "filter-disabled" });
@@ -245,6 +258,7 @@ export function evaluate(element: Element): void {
     itemStates.delete(element);
     reveal(element);
     stats.skipped += 1;
+    stats.skippedEmpty += 1;
     stats.lastReason = "empty-text";
     void persistStatus(false);
     debugLog("skip", { reason: "empty-text" });
@@ -255,6 +269,7 @@ export function evaluate(element: Element): void {
   const previous = itemStates.get(element);
   if (previous?.fingerprint === fingerprint && previous.settingsVersion === settingsVersion) {
     stats.skipped += 1;
+    stats.skippedUnchanged += 1;
     stats.lastReason = "unchanged";
     void persistStatus(false);
     debugLog("skip", { reason: "unchanged", fingerprint });
@@ -281,6 +296,7 @@ export function evaluate(element: Element): void {
   if (!accepted) {
     itemStates.delete(element);
     stats.skipped += 1;
+    stats.skippedQueueFull += 1;
     stats.lastReason = "queue-full";
     void persistStatus(false);
     debugLog("skip", { reason: "queue-full", fingerprint });

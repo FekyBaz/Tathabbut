@@ -195,14 +195,16 @@ def main():
                     page.wait_for_timeout(1500)
 
                     expected_hidden = ["en-harass", "ar-harass", "en-threat", "en-spam",
-                                       "ar-spam", "norm-diacritics", "dup-a", "dup-b", "nested-parent"]
+                                       "ar-spam", "norm-diacritics", "dup-a", "dup-b", "nested-parent",
+                                       "nested-threat-ar"]
                     for eid in expected_hidden:
                         got = hidden(eid)
                         check("hide-" + eid + "-" + tag, "classification", True, got)
                         if got:
                             check("single-control-" + eid + "-" + tag, "hide", 1, buttons(eid))
                     for eid in ["neutral-en", "respect-en", "respect-ar", "long-mixed",
-                                "spam-benign", "empty-article", "editable", "standalone-comment"]:
+                                "spam-benign", "empty-article", "editable", "standalone-comment",
+                                "standalone-threat"]:
                         check("visible-" + eid + "-" + tag, "threshold", False, hidden(eid))
 
                     articles = page.locator('[role="article"]').count()

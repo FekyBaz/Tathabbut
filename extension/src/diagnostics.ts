@@ -15,6 +15,10 @@ export interface ContentStatus {
   classified: number;
   hidden: number;
   skipped: number;
+  skippedUnchanged: number;
+  skippedEmpty: number;
+  skippedDisabled: number;
+  skippedQueueFull: number;
   lastReason: string;
   /** Hostname only (e.g. www.facebook.com). Never paths or profile names. */
   origin: string;
@@ -66,6 +70,7 @@ export interface StatusView {
   reason: string;
   updated: string;
   source: string;
+  skips: string;
 }
 
 const DASH = "—";
@@ -89,7 +94,8 @@ export function statusViewModel(
       counts: DASH,
       reason: DASH,
       updated: DASH,
-      source: DASH
+      source: DASH,
+      skips: DASH
     };
   }
   const snapshot = input.snapshot;
@@ -101,7 +107,8 @@ export function statusViewModel(
       counts: DASH,
       reason: DASH,
       updated: DASH,
-      source: DASH
+      source: DASH,
+      skips: DASH
     };
   }
   const known: Omit<StatusView, "started" | "settings"> = {
@@ -109,6 +116,11 @@ export function statusViewModel(
     counts:
       snapshot.evaluated + " / " + snapshot.classified + " / " + snapshot.hidden + " / " + snapshot.skipped,
     reason: describeReason(snapshot.lastReason),
+    skips:
+      snapshot.skippedUnchanged + " unchanged · " +
+      snapshot.skippedEmpty + " empty · " +
+      snapshot.skippedDisabled + " disabled · " +
+      snapshot.skippedQueueFull + " queue-full",
     updated: formatStatusAge(snapshot.updatedAt, now),
     source: snapshot.origin || "unknown site"
   };

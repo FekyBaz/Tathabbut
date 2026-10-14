@@ -119,3 +119,12 @@ def test_exact_respectful_disagreement_is_not_hidden() -> None:
     )
     assert response.status_code == 200
     assert response.json()["labels"] == []
+
+
+def test_arabic_future_threat_with_hamza() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "\u0633\u0648\u0641 \u0623\u0642\u062a\u0644\u0643", "enabled_categories": ["threats"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "threats"

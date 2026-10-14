@@ -20,6 +20,7 @@ const stCounts = byId<HTMLElement>("st-counts");
 const stReason = byId<HTMLElement>("st-reason");
 const stUpdated = byId<HTMLElement>("st-updated");
 const stSource = byId<HTMLElement>("st-source");
+const stSkips = byId<HTMLElement>("st-skips");
 
 function selectedCategories(): Category[] {
   return Array.from(document.querySelectorAll<HTMLInputElement>('input[name="category"]:checked'))
@@ -51,6 +52,7 @@ function renderStatus(input: { snapshot?: ContentStatus; storageError: boolean }
   stArticles.textContent = view.articles;
   stCounts.textContent = view.counts;
   stReason.textContent = view.reason;
+  stSkips.textContent = view.skips;
   stUpdated.textContent = view.updated;
   stSource.textContent = view.source;
 }

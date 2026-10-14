@@ -22,6 +22,10 @@ function sampleStatus(overrides: Partial<ContentStatus> = {}): ContentStatus {
     classified: 3,
     hidden: 1,
     skipped: 4,
+    skippedUnchanged: 2,
+    skippedEmpty: 1,
+    skippedDisabled: 0,
+    skippedQueueFull: 1,
     lastReason: "rule-match",
     origin: "www.facebook.com",
     updatedAt: 2000,
@@ -98,6 +102,7 @@ describe("statusViewModel", () => {
     expect(view.started).toContain("Running since");
     expect(view.settings).toContain("threshold 0.85");
     expect(view.counts).toBe("3 / 3 / 1 / 4");
+    expect(view.skips).toBe("2 unchanged · 1 empty · 0 disabled · 1 queue-full");
     expect(view.source).toBe("www.facebook.com");
   });
 });

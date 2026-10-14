@@ -120,3 +120,17 @@ describe("arabic normalization", () => {
     expect(classifyLocally("\u0627\u0646\u062a \u063a\u0628\u0649").labels.map((l) => l.category)).toContain("harassment");
   });
 });
+
+describe("live arabic threat سوف أقتلك", () => {
+  // Proven live case: the classifier matches all common spellings.
+  // If this text stays visible live, the cause is discovery
+  // (e.g. a standalone comment with no article ancestor), not rules.
+  it.each(["\u0633\u0648\u0641 \u0623\u0642\u062a\u0644\u0643", "\u0633\u0648\u0641 \u0627\u0642\u062a\u0644\u0643", "\u0633\u0648\u0641 \u0623\u0642\u062a\u0644\u0643.", "\u0623\u0646\u0627 \u0633\u0648\u0641 \u0623\u0642\u062a\u0644\u0643"])(
+    "flags %s as a threat hidden at 0.85",
+    (text) => {
+      const result = classifyLocally(text);
+      expect(result.labels.map((label) => label.category)).toContain("threats");
+      expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+    }
+  );
+});
