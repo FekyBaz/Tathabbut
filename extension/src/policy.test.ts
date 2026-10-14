@@ -89,7 +89,7 @@ describe("live controlled examples", () => {
     expect(classifyLocally("FREE FREE FREE CLICK NOW CLICK NOW CLICK NOW").labels).toEqual([]);
   });
   it("matches Arabic threats even when invisible Unicode marks split the phrase", () => {
-    for (const text of ["سوف\\u200B اقتلك", "سوف اقتل\\u200Fك", "سوف\\u2060 اقتلك"]) {
+    for (const text of ["سوف\u200B اقتلك", "سوف اقتل\u200Fك", "سوف\u2060 اقتلك"]) {
       const result = classifyLocally(text);
       expect(result.labels.map((label) => label.category)).toContain("threats");
       expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
