@@ -152,3 +152,46 @@ describe("popup diagnostics panel", () => {
     expect(text("st-articles")).toBe("9");
   });
 });
+
+describe("popup save flow", () => {
+  function mocks() {
+    const chromeApi = (globalThis as unknown as {
+      chrome: {
+        storage: { sync: { set: ReturnType<typeof vi.fn> } };
+        permissions: { request: ReturnType<typeof vi.fn> };
+      };
+    }).chrome;
+    return {
+      set: vi.mocked(chromeApi.storage.sync.set),
+      request: vi.mocked(chromeApi.permissions.request)
+    };
+  }
+
+  it("persists local-only settings including the threshold", async () => {
+    await loadPopupModule();
+    (document.getElementById("threshold") as HTMLInputElement).value = "90";
+    (document.getElementById("save") as HTMLButtonElement).click();
+    await settle(150);
+    const { set, request } = mocks();
+    expect(set).toHaveBeenCalledWith({
+      tathabbutSettings: {
+        enabled: true,
+        enabledCategories: ["harassment", "hate", "threats", "spam"],
+        threshold: 0.9,
+        apiUrl: ""
+      }
+    });
+    expect(request).not.toHaveBeenCalled();
+    expect(text("status")).toContain("Local-only");
+  });
+
+  it("rejects an invalid API URL without saving", async () => {
+    await loadPopupModule();
+    (document.getElementById("apiUrl") as HTMLInputElement).value = "http://api.example.com";
+    (document.getElementById("save") as HTMLButtonElement).click();
+    await settle(150);
+    const { set } = mocks();
+    expect(set).not.toHaveBeenCalled();
+    expect(text("status")).not.toBe("");
+  });
+});
