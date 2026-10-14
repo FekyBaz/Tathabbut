@@ -37,6 +37,32 @@ or public claim.
 9. **Comments.** Record whether comment threads carry `role="article"`;
    standalone comments without it are skipped by design.
 
+## Controlled live check (short version)
+
+Use one self-authored test post with four self-authored comments, threshold
+**85%**, all categories on. Record only counts and outcome codes — never
+paste real post text, names, or links into any report.
+
+Expected starter-rule outcomes (current narrow rules, by design):
+
+- `I will kill you.` → hidden (threats).
+- `You are an idiot.` → hidden (harassment).
+- `FREE FREE FREE CLICK NOW CLICK NOW CLICK NOW` → stays visible
+  (matches no starter spam rule; shouty promo text is deliberately not
+  covered to avoid punishing ordinary posts).
+- `I respectfully disagree with your opinion.` → stays visible.
+
+Then, in order: add one more matching comment while the page is open
+(dynamic insert), edit one hidden comment to neutral text and confirm it
+is restored, click a reveal control and confirm restore, switch to 99%
+and confirm stock-rule items stop hiding, switch back to 85%, refresh,
+and open the same feed in a second tab (each tab overwrites the shared
+status key — compare `updatedAt` freshness, not just counts).
+
+Report template per step: `visible|hidden`, popup
+`articles/evaluated/classified/hidden/skipped`, `lastReason`, and whether
+the snapshot was fresh. That is all that is needed — no content.
+
 ## Recording results
 
 For each scenario record: expected result, actual result, diagnostic

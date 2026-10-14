@@ -26,6 +26,7 @@ interface RunStats {
   evaluated: number;
   classified: number;
   hidden: number;
+  skipped: number;
   lastReason: string;
 }
 
@@ -36,6 +37,7 @@ const stats: RunStats = {
   evaluated: 0,
   classified: 0,
   hidden: 0,
+  skipped: 0,
   lastReason: "starting"
 };
 
@@ -56,6 +58,7 @@ function currentStatus(): ContentStatus {
     evaluated: stats.evaluated,
     classified: stats.classified,
     hidden: stats.hidden,
+    skipped: stats.skipped,
     lastReason: stats.lastReason,
     origin: window.location.hostname,
     updatedAt: Date.now()
@@ -228,9 +231,9 @@ export function applyResult(element: Element, result: Classification): void {
 
 export function evaluate(element: Element): void {
   if (!(element instanceof HTMLElement) || !element.isConnected) return;
-  stats.evaluated += 1;
   if (!settings.enabled) {
     reveal(element);
+    stats.skipped += 1;
     stats.lastReason = "filter-disabled";
     void persistStatus(false);
     debugLog("skip", { reason: "filter-disabled" });
@@ -241,6 +244,7 @@ export function evaluate(element: Element): void {
   if (!text) {
     itemStates.delete(element);
     reveal(element);
+    stats.skipped += 1;
     stats.lastReason = "empty-text";
     void persistStatus(false);
     debugLog("skip", { reason: "empty-text" });
@@ -250,6 +254,7 @@ export function evaluate(element: Element): void {
   const fingerprint = fingerprintText(text);
   const previous = itemStates.get(element);
   if (previous?.fingerprint === fingerprint && previous.settingsVersion === settingsVersion) {
+    stats.skipped += 1;
     stats.lastReason = "unchanged";
     void persistStatus(false);
     debugLog("skip", { reason: "unchanged", fingerprint });
@@ -257,24 +262,26 @@ export function evaluate(element: Element): void {
   }
 
   // A changed post invalidates the previous decision immediately; stale async results cannot re-hide it.
+  stats.evaluated += 1;
   reveal(element);
   const state: ItemState = { fingerprint, settingsVersion };
   itemStates.set(element, state);
 
   const accepted = queue.enqueue(async () => {
     const result = await classify(text);
-    stats.classified += 1;
     const latest = itemStates.get(element);
     if (!element.isConnected ||
         latest?.fingerprint !== fingerprint ||
         latest.settingsVersion !== settingsVersion ||
         state.settingsVersion !== settingsVersion) return;
+    stats.classified += 1;
     applyResult(element, result);
   });
 
   // If the bounded queue is saturated, allow a later DOM change or settings update to retry.
   if (!accepted) {
     itemStates.delete(element);
+    stats.skipped += 1;
     stats.lastReason = "queue-full";
     void persistStatus(false);
     debugLog("skip", { reason: "queue-full", fingerprint });

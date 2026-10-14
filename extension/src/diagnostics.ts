@@ -14,6 +14,7 @@ export interface ContentStatus {
   evaluated: number;
   classified: number;
   hidden: number;
+  skipped: number;
   lastReason: string;
   /** Hostname only (e.g. www.facebook.com). Never paths or profile names. */
   origin: string;
@@ -105,7 +106,8 @@ export function statusViewModel(
   }
   const known: Omit<StatusView, "started" | "settings"> = {
     articles: String(snapshot.articlesFound),
-    counts: snapshot.evaluated + " / " + snapshot.classified + " / " + snapshot.hidden,
+    counts:
+      snapshot.evaluated + " / " + snapshot.classified + " / " + snapshot.hidden + " / " + snapshot.skipped,
     reason: describeReason(snapshot.lastReason),
     updated: formatStatusAge(snapshot.updatedAt, now),
     source: snapshot.origin || "unknown site"

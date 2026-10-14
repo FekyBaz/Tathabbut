@@ -51,6 +51,29 @@ Stock local scores top out at **0.90** (0.86 for most categories), so a
 - `below-threshold` → lower the threshold (e.g. 85%) for stock rules.
 - `hidden` logged but nothing visibly changes → CSS/rendering issue.
 
+## Counter semantics (exact meanings)
+
+- `articlesFound`: candidates in the most recent scan (not unique ever).
+- `evaluated`: classification submissions after dedupe (text or settings
+  changed). Unchanged, empty, disabled, or queue-full skips do NOT count
+  here — that is why this number stays far below raw observer callbacks.
+- `classified`: results that passed the staleness guard and reached a
+  hide/show decision. In-flight results discarded as stale do NOT count.
+- `hidden`: hide decisions actually applied (cumulative; re-hiding an
+  already-hidden element does not double-count, but reveal-then-rehide
+  after an edit does).
+- `skipped`: elements bypassed without classification; the latest
+  machine-readable cause is in `lastReason`.
+- A hidden parent visually hides its children through the container's
+  collapsed style; that appearance is NOT an independent classification
+  of each child. Nested comments count toward their article's text.
+- Standalone comments without `role="article"` are skipped by design
+  (`lastReason` never advances for them on scan).
+- Snapshots are per content-script instance: with several Facebook tabs
+  open, each tab overwrites the single shared key, so a zero-count
+  snapshot most often means a freshly loaded tab that has not finished
+  its first scan (`lastReason: starting`), not a broken extension.
+
 ## Limits of the panel
 
 - With several Facebook tabs open, the panel reflects the **most recently

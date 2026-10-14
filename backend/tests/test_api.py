@@ -89,3 +89,33 @@ def test_unknown_category_rejected() -> None:
         json={"text": "hello", "enabled_categories": ["misinformation"]},
     )
     assert response.status_code == 422
+
+
+def test_shouty_promo_text_is_not_matched_by_starter_spam_rules() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "FREE FREE FREE CLICK NOW CLICK NOW CLICK NOW", "enabled_categories": ["spam"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"] == []
+
+
+def test_tatweel_insult_matches_after_normalization() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "\u0627\u0646\u062a \u063a\u0640\u0640\u0628\u0640\u0640\u064a", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_exact_respectful_disagreement_is_not_hidden() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={
+            "text": "I respectfully disagree with your opinion.",
+            "enabled_categories": ["harassment", "hate", "threats", "spam"],
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"] == []

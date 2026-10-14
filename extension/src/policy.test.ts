@@ -81,3 +81,42 @@ describe("hide decision for a clear rule match", () => {
     expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.99 })).toBe(false);
   });
 });
+
+describe("live controlled examples", () => {
+  it("does not match shouty FREE/CLICK-NOW text with the starter spam rules", () => {
+    // Deliberately narrow: "free" and "click now" alone match no rule, so
+    // this stays visible instead of punishing ordinary promo-looking text.
+    expect(classifyLocally("FREE FREE FREE CLICK NOW CLICK NOW CLICK NOW").labels).toEqual([]);
+  });
+  it("flags an explicit kill threat and hides it at the default threshold", () => {
+    const result = classifyLocally("I will kill you.");
+    expect(result.labels.map((label) => label.category)).toContain("threats");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+  it("flags a direct insult and hides it at the default threshold", () => {
+    const result = classifyLocally("You are an idiot.");
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+  it("does not hide the exact respectful-disagreement control", () => {
+    expect(classifyLocally("I respectfully disagree with your opinion.").labels).toEqual([]);
+  });
+  it("a disabled category beats a real match", () => {
+    const result = classifyLocally("You are an idiot.");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, enabledCategories: ["spam"] })).toBe(false);
+    expect(shouldHide(result, DEFAULT_SETTINGS)).toBe(true);
+  });
+});
+
+describe("arabic normalization", () => {
+  it("strips tatweel before matching", () => {
+    expect(classifyLocally("\u0627\u0646\u062a \u063a\u0640\u0640\u0628\u0640\u0640\u064a").labels.map((l) => l.category)).toContain("harassment");
+  });
+  it("normalizes diacritics and alef variants", () => {
+    expect(classifyLocally("\u0625\u0650\u0646\u0652\u062a\u064e \u063a\u064e\u0628\u0650\u064a").labels.map((l) => l.category)).toContain("harassment");
+    expect(classifyLocally("\u0623\u0646\u062a \u063a\u0628\u064a").labels.map((l) => l.category)).toContain("harassment");
+  });
+  it("normalizes alef-maqsura before matching", () => {
+    expect(classifyLocally("\u0627\u0646\u062a \u063a\u0628\u0649").labels.map((l) => l.category)).toContain("harassment");
+  });
+});

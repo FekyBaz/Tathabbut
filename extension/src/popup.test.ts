@@ -61,6 +61,7 @@ function freshSnapshot(overrides: Record<string, unknown> = {}): Record<string, 
     evaluated: 5,
     classified: 5,
     hidden: 2,
+    skipped: 6,
     lastReason: "rule-match",
     origin: "www.facebook.com",
     updatedAt: Date.now(),
@@ -103,7 +104,7 @@ describe("popup diagnostics panel", () => {
     await loadPopupModule();
     expect(text("st-source")).toBe("www.facebook.com");
     expect(text("st-articles")).toBe("5");
-    expect(text("st-counts")).toBe("5 / 5 / 2");
+    expect(text("st-counts")).toBe("5 / 5 / 2 / 6");
     expect(text("st-started")).toContain("Running since");
     expect(text("st-settings")).toContain("threshold 0.85");
   });
