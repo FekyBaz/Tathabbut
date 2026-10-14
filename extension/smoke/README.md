@@ -18,6 +18,8 @@ Options: `python smoke/lab.py --hosts www,web [--headless]`.
 Headed Chromium is the default because headless builds do not load
 extensions; needs a desktop session (for CI, run under `xvfb-run`,
 which has not been verified yet).
+To exercise a different build without rebuilding, set `TATHABBUT_DIST`
+to its directory (used for failure-injection drills).
 
 ## Fixture matrix (`scenarios.html`)
 
