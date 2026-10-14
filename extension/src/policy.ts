@@ -70,10 +70,23 @@ export function classifyLocally(text: string): Classification {
   const normalized = normalizeForRules(text);
   const labels: LabelScore[] = [];
   for (const category of CATEGORIES) {
-    if (patterns[category].some((pattern) => pattern.test(normalized))) {
+    const matched = patterns[category].some((pattern) => pattern.test(normalized));
+    if (matched) {
       labels.push({ category, score: category === "threats" ? 0.90 : 0.86 });
     }
   }
+
+  // Phrase matching after normalization is explicit and easy to regression-test.
+  // These are narrow starter examples, not a general sarcasm detector.
+  const mockeryPhrases = [
+    "يا سلام على الذكاء",
+    "ما شاء الله على الفهم"
+  ];
+  if (!labels.some((label) => label.category === "harassment") &&
+      mockeryPhrases.some((phrase) => normalized.includes(phrase))) {
+    labels.push({ category: "harassment", score: 0.86 });
+  }
+
   return { labels, provider: "local-heuristic" };
 }
 
