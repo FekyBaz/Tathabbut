@@ -155,3 +155,93 @@ def test_egyptian_threat_variant_parity() -> None:
     )
     assert response.status_code == 200
     assert response.json()["labels"][0]["category"] == "threats"
+
+
+def test_parity_harassment_feminine_taa_marbuta() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "انت غبية", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_parity_harassment_ya_jahil() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "يا جاهل", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_parity_mockery_alim_zamanak() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "أنت عالم زمانك", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_parity_mockery_fakir_nafsak() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "انت فاكر نفسك مين؟", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_parity_belittling_malaksh() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "انت مالكش لازمه", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_parity_belittling_mahadesh() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "محدش بياخد بكلامك", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_parity_belittling_akher() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "انت آخر واحد يتكلم", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_parity_belittling_metefhamsh() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "انت متفهمش حاجة", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_parity_respectful_egyptian_stays() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "أنا مختلف معاك في الرأي", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"] == []
+
+
+def test_parity_abstract_failure_stays() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "هذا الفشل في التجربة يحتاج إلى تحليل", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"] == []

@@ -77,12 +77,13 @@ def main():
                     page.locator("#neutral.tathabbut-hidden").count() == 0,
                 )
                 check(
-                    "nested-comment article hidden on " + host,
-                    page.locator("#nested.tathabbut-hidden").count() == 1,
+                    "nested article stays visible while its comment hides on " + host,
+                    page.locator("#nested.tathabbut-hidden").count() == 0
+                    and page.locator("#nested .comment.tathabbut-hidden").count() == 1,
                 )
                 check(
-                    "standalone comment untouched on " + host,
-                    page.locator("#standalone.tathabbut-hidden").count() == 0,
+                    "standalone comment hidden independently on " + host,
+                    page.locator("#standalone.tathabbut-hidden").count() == 1,
                 )
 
                 harmful.locator(":scope > .tathabbut-reveal").click()

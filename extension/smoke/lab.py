@@ -194,7 +194,7 @@ def main():
                         continue
                     page.wait_for_timeout(1500)
 
-                    expected_hidden = ["en-harass", "ar-harass", "en-threat", "en-spam",
+                    expected_hidden = ["en-harass", "ar-harass", "ar-belittle", "en-threat", "en-spam",
                                        "ar-spam", "norm-diacritics", "dup-a", "dup-b",
                                        "nested-parent-comment", "nested-threat-ar-comment",
                                        "standalone-comment", "standalone-threat", "standalone-threat-ar",
