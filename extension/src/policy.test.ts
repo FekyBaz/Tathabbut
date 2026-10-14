@@ -128,6 +128,32 @@ describe("arabic normalization", () => {
   });
 });
 
+describe("Arabic bullying, mockery, and personal put-downs", () => {
+  it.each([
+    "انت غبي",
+    "إنت أهبل",
+    "يا متخلف",
+    "يا حقير",
+    "عبقري زمانك",
+    "يا سلام على الذكاء",
+    "ما شاء الله على الفهم",
+    "فاهم اوي"
+  ])("flags a targeted bullying or mockery phrase: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "أنا مختلف معاك في الرأي",
+    "رأيك مش دقيق ومحتاج دليل",
+    "أنا مش مقتنع بكلامك",
+    "خلينا نناقش الفكرة بهدوء"
+  ])("keeps criticism without a personal attack visible: %s", (text) => {
+    expect(classifyLocally(text).labels).toEqual([]);
+  });
+});
+
 describe("Egyptian Arabic threat variants", () => {
   it.each(["اريد قتلك", "أريد قتلك", "عايز اقتلك", "عاوز اقتلك", "سوف اقتلك", "سوف أقتلك"])(
     "classifies the explicit threat variant: %s",
