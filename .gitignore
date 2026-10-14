@@ -18,3 +18,5 @@ Thumbs.db
 *.egg-info/
 extension/smoke/smoke_log.txt
 extension/smoke/live_log.txt
+extension/smoke/lab-report.json
+extension/smoke/artifacts/

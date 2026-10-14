@@ -1,35 +1,64 @@
-# Browser smoke test (Playwright + Chromium)
+# Tathabbut Testing Lab
 
-Loads the unpacked extension from `../dist` into a real Chromium and serves
-a local feed fixture under `https://www.facebook.com/` and
-`https://web.facebook.com/` via request routing, then verifies the full
-pipeline: injection, discovery, classification, hide, reveal, dynamic
-inserts, status snapshots, and the popup panel.
-
-## Prerequisites
-
-- Python Playwright and a Chromium build:
-  `pip install playwright && python -m playwright install chromium`
-- A fresh `npm run build` in `extension/` (the test loads `../dist`).
-- A desktop session (the test launches headed Chromium).
-
-## Run
-
-From the repository root:
+One command, real browser, real built extension:
 
 ```bash
-python extension/smoke/smoke_test.py
+cd extension
+npm run test:e2e
 ```
 
-Results are printed to the console and appended to a `smoke_log.txt` file
-next to the script. Exit code `0` means every check passed.
+The command builds the extension (`tsc` + Vite + package verification),
+loads the unpacked `dist/` into Chromium via Playwright, serves the
+`scenarios.html` fixture matrix under facebook.com hostnames, and drives
+discovery, classification, threshold, hide/reveal, dynamic-insert,
+text-edit, and live-settings scenarios. It exits non-zero on failure and
+writes `smoke/lab-report.json` (git-ignored) plus a console summary.
 
-## What it proves (and does not)
+Options: `python smoke/lab.py --hosts www,web [--headless]`.
+Headed Chromium is the default because headless builds do not load
+extensions; needs a desktop session (for CI, run under `xvfb-run`,
+which has not been verified yet).
 
-Proven when green: manifest matching on both hosts, classic-script content
-loading, feed discovery, local classification, threshold decisions,
-reversible hiding, observer-driven inserts, and popup diagnostics.
+## Fixture matrix (`scenarios.html`)
 
-Not proven: compatibility with Facebook's live DOM, which changes
-independently of this repository and still requires the manual procedure
-in `docs/MANUAL_TEST.md` on a real feed.
+Each element id states its expected outcome at the default 85% threshold:
+matching English/Arabic harassment, threats, English/Arabic spam, and a
+diacritics variant hide; neutral text, respectful EN/AR disagreement,
+benign DM mentions, long mixed-language text, empty content, and
+standalone comments stay visible. Duplicates hide independently; nested
+comments count toward their article.
+
+To add a case: append an element with a descriptive id, then add the
+matching `check(...)` line in `lab.py` with its pipeline stage
+(injection, discovery, classification, threshold, hide, reveal, dynamic,
+settings, diagnostics). Failing scenarios print the earliest failing
+stage first.
+
+## Failure reports
+
+On failure the summary names the scenario, the pipeline stage, and the
+expected-vs-actual outcome, e.g.:
+
+```text
+FAIL [threshold] threshold-87-www expected=False actual=True
+```
+
+Only failing scenarios capture a screenshot (`smoke/artifacts/`,
+git-ignored, fixture content only — never real user content).
+
+## Companion tools (same folder)
+
+- `smoke_test.py` — the original smaller Chromium check, kept as-is.
+- `live_check.py` — logged-out navigation of real facebook.com hosts;
+  proves injection on the genuine site, not feed behavior.
+- `inspector.py` — local-only DOM compatibility inspector. Prints a
+  sanitized structural summary (role counts, nesting, text-length stats —
+  never text, names, or URLs beyond the hostname). Usage:
+  `python extension/smoke/inspector.py [--url <https-url>]`.
+- `fixture.html` — the original minimal fixture for `smoke_test.py`.
+
+## Authenticated live testing
+
+Never automated here and never required for `test:e2e`. Follow
+`docs/MANUAL_TEST.md` with an authorized test profile. Fixture green
+does not imply live-DOM compatibility.
