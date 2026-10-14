@@ -9,6 +9,7 @@ const DEBUG_KEY = "tathabbutDebug";
 const MATCHING_POST = "post-harass";
 const CLEAN_POST = "post-clean";
 const NESTED_PARENT = "post-nested";
+const NESTED_CHILD = "comment-nested";
 const STANDALONE_COMMENT = "comment-only";
 
 function fixture(): string {
@@ -17,7 +18,7 @@ function fixture(): string {
     '<div role="article" id="' + MATCHING_POST + '"><div class="post-body">You are an idiot</div></div>' +
     '<div role="article" id="' + CLEAN_POST + '"><div class="post-body">I love sunny days and long walks.</div></div>' +
     '<div role="article" id="' + NESTED_PARENT + '"><div class="post-body">Great match today!</div>' +
-    '<div class="comment"><span>You are a loser</span></div></div>' +
+    '<div role="article" id="comment-nested"><span>You are a loser</span></div></div>' +
     '<div class="comment" id="' + STANDALONE_COMMENT + '"><span>Shut up, you are pathetic</span></div>' +
     "</div>"
   );
@@ -141,11 +142,15 @@ describe("content lifecycle on feed fixtures", () => {
     expect(revealButtons(post)).toBe(1);
   });
 
-  it("counts nested comment text as part of the article", async () => {
+  it("classifies nested articles independently without hiding their parent", async () => {
     document.body.innerHTML = fixture();
     await loadContentModule();
     const parent = byId(NESTED_PARENT);
-    await vi.waitFor(() => expect(isHidden(parent)).toBe(true));
+    const comment = byId(NESTED_CHILD);
+    await vi.waitFor(() => expect(isHidden(comment)).toBe(true));
+    expect(isHidden(parent)).toBe(false);
+    expect(revealButtons(parent)).toBe(0);
+    expect(revealButtons(comment)).toBe(1);
   });
 
   it("skips a standalone comment without an article role", async () => {
@@ -220,7 +225,7 @@ describe("content lifecycle on feed fixtures", () => {
     };
     expect(typeof latest.startedAt).toBe("number");
     expect(latest.settingsOk).toBe(true);
-    expect(latest.articlesFound).toBe(3);
+    expect(latest.articlesFound).toBe(4);
     expect(latest.classified).toBeGreaterThanOrEqual(3);
     expect(latest.hidden).toBeGreaterThanOrEqual(2);
     expect(typeof latest.lastReason).toBe("string");
