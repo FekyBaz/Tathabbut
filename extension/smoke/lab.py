@@ -127,6 +127,8 @@ def main():
                 for host in hosts:
                     tag = host.split("/")[2]
                     page = ctx.new_page()
+                    seen_urls: list = []
+                    page.on("request", lambda req: seen_urls.append(req.url))
                     page.route(
                         "https://*.facebook.com/*",
                         lambda route: route.fulfill(body=fixture_html, content_type="text/html"),
@@ -282,6 +284,97 @@ def main():
                         check("settings-restore-" + tag, "settings", True, True)
                     except Exception:
                         check("settings-restore-" + tag, "settings", True, False)
+
+                    # --- Lifecycle robustness: adversarial DOM churn. ---
+                    # Replace (not append) a neutral article with harassing text.
+                    page.evaluate(
+                        "(() => { const old = document.getElementById('neutral-en');"
+                        " const d = document.createElement('div');"
+                        " d.setAttribute('role', 'article'); d.id = 'replaced';"
+                        " d.textContent = 'I will kill you';"
+                        " old.replaceWith(d); })()"
+                    )
+                    try:
+                        page.wait_for_selector("#replaced.tathabbut-hidden", timeout=10000)
+                        check("replace-element-" + tag, "dynamic", True, True)
+                    except Exception:
+                        check("replace-element-" + tag, "dynamic", True, False)
+
+                    # Move a hidden article elsewhere: decision must travel, no duplicate.
+                    page.evaluate(
+                        "document.getElementById('feed').appendChild(document.getElementById('ar-harass'));"
+                    )
+                    page.wait_for_timeout(1000)
+                    check("move-stable-" + tag, "dynamic", True, hidden("ar-harass"))
+                    check("move-single-control-" + tag, "hide", 1, buttons("ar-harass"))
+
+                    # Rapid successive edits: only the final text may decide.
+                    page.evaluate(
+                        "(() => { const b = document.querySelector('#spam-benign .body');"
+                        " b.textContent = 'You are an idiot';"
+                        " b.textContent = 'What a wonderful day for a walk';"
+                        " b.textContent = 'Shut up'; })()"
+                    )
+                    try:
+                        page.wait_for_selector("#spam-benign.tathabbut-hidden", timeout=10000)
+                        check("rapid-edits-final-" + tag, "dynamic", True, True)
+                    except Exception:
+                        check("rapid-edits-final-" + tag, "dynamic", True, False)
+                    check("rapid-edits-single-control-" + tag, "hide", 1, buttons("spam-benign"))
+
+                    # Delayed fill: empty article populated later.
+                    page.evaluate(
+                        "(() => { const d = document.createElement('div');"
+                        " d.setAttribute('role', 'article'); d.id = 'delayed';"
+                        " document.getElementById('feed').appendChild(d);"
+                        " setTimeout(() => { d.textContent = 'You are an idiot'; }, 800); })()"
+                    )
+                    try:
+                        page.wait_for_selector("#delayed.tathabbut-hidden", timeout=15000)
+                        check("delayed-fill-" + tag, "dynamic", True, True)
+                    except Exception:
+                        check("delayed-fill-" + tag, "dynamic", True, False)
+
+                    # Remove and reinsert the same hidden node.
+                    page.evaluate(
+                        "(() => { const el = document.getElementById('dup-a');"
+                        " el.remove();"
+                        " setTimeout(() => document.getElementById('feed').appendChild(el), 500); })()"
+                    )
+                    try:
+                        page.wait_for_selector("#dup-a.tathabbut-hidden", timeout=10000)
+                        check("reinsert-stable-" + tag, "dynamic", True, True)
+                    except Exception:
+                        check("reinsert-stable-" + tag, "dynamic", True, False)
+                    check("reinsert-single-control-" + tag, "hide", 1, buttons("dup-a"))
+
+                    # User reveal survives unrelated observer churn.
+                    page.locator("#dup-b > .tathabbut-reveal").click()
+                    page.wait_for_function(
+                        "document.querySelectorAll('#dup-b.tathabbut-hidden').length === 0",
+                        timeout=5000,
+                    )
+                    page.evaluate(
+                        "(() => { const d = document.createElement('div');"
+                        " d.id = 'churn'; document.getElementById('feed').appendChild(d); })()"
+                    )
+                    page.wait_for_timeout(1500)
+                    check("reveal-persists-" + tag, "reveal", False, hidden("dup-b"))
+
+                    # No-op churn leaves exactly one control per hidden item.
+                    hidden_count = page.locator(".tathabbut-hidden").count()
+                    control_count = page.locator(".tathabbut-hidden > .tathabbut-reveal").count()
+                    check("no-duplicate-controls-" + tag, "hide", True,
+                          hidden_count > 0 and hidden_count == control_count,
+                          "hidden=%d controls=%d" % (hidden_count, control_count))
+
+                    # Local-only network confinement: fixture traffic stays on-site.
+                    allowed = ("https://www.facebook.com/", "https://web.facebook.com/",
+                               "https://m.facebook.com/", "https://facebook.com/",
+                               "chrome-extension://", "data:", "blob:")
+                    stray = [u for u in seen_urls if not u.startswith(allowed)]
+                    check("network-confinement-" + tag, "privacy", True, not stray,
+                          "stray=%s" % (stray[:3],))
 
                     if len([s for s in report["scenarios"] if not s["pass"]]) > failures_before:
                         shot("scenario")

@@ -11,7 +11,9 @@ The command builds the extension (`tsc` + Vite + package verification),
 loads the unpacked `dist/` into Chromium via Playwright, serves the
 `scenarios.html` fixture matrix under facebook.com hostnames, and drives
 discovery, classification, threshold, hide/reveal, dynamic-insert,
-text-edit, and live-settings scenarios. It exits non-zero on failure and
+replace, move, rapid-edit, delayed-fill, remove-reinsert,
+reveal-persistence, text-edit, and live-settings scenarios, plus a
+local-only network-confinement check. It exits non-zero on failure and
 writes `smoke/lab-report.json` (git-ignored) plus a console summary.
 
 Options: `python smoke/lab.py --hosts www,web [--headless]`.
