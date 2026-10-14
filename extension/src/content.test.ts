@@ -21,8 +21,11 @@ function fixture(): string {
     '<div role="article" id="' + CLEAN_POST + '"><div class="post-body">I love sunny days and long walks.</div></div>' +
     '<div role="article" id="' + NESTED_PARENT + '"><div class="post-body">Great match today!</div>' +
     '<div class="comment" id="comment-nested"><span>You are a loser</span></div></div>' +
-    '<div class="comment" id="' + STANDALONE_COMMENT + '"><span>Shut up, you are pathetic</span></div>' +
-    '<div class="comment" id="' + STANDALONE_THREAT + '"><span>سوف اقتلك</span></div>' +
+    '<div data-testid="comments" id="comments-container">' +
+    '<div data-testid="comment" id="' + STANDALONE_COMMENT + '"><span>Shut up, you are pathetic</span></div>' +
+    '<div data-testid="comment" id="' + STANDALONE_THREAT + '"><span>سوف اقتلك</span></div>' +
+    '<div data-testid="comment" id="respectful-comment"><span>I respectfully disagree with your opinion.</span></div>' +
+    '</div>' +
     '<p id="' + STANDALONE_PARAGRAPH + '">You are an idiot</p>' +
     "</div>"
   );
@@ -169,6 +172,8 @@ describe("content lifecycle on feed fixtures", () => {
     expect(revealButtons(comment)).toBe(1);
     expect(revealButtons(threat)).toBe(1);
     expect(revealButtons(paragraph)).toBe(1);
+    expect(isHidden(byId("comments-container"))).toBe(false);
+    expect(isHidden(byId("respectful-comment"))).toBe(false);
     expect(paragraph.querySelector(".tathabbut-hidden-text")?.textContent).toBe("You are an idiot");
     (paragraph.querySelector(".tathabbut-reveal") as HTMLButtonElement).click();
     expect(isHidden(paragraph)).toBe(false);
