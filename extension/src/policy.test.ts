@@ -88,6 +88,13 @@ describe("live controlled examples", () => {
     // this stays visible instead of punishing ordinary promo-looking text.
     expect(classifyLocally("FREE FREE FREE CLICK NOW CLICK NOW CLICK NOW").labels).toEqual([]);
   });
+  it("matches Arabic threats even when invisible Unicode marks split the phrase", () => {
+    for (const text of ["سوف\\u200B اقتلك", "سوف اقتل\\u200Fك", "سوف\\u2060 اقتلك"]) {
+      const result = classifyLocally(text);
+      expect(result.labels.map((label) => label.category)).toContain("threats");
+      expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+    }
+  });
   it("flags an explicit kill threat and hides it at the default threshold", () => {
     const result = classifyLocally("I will kill you.");
     expect(result.labels.map((label) => label.category)).toContain("threats");
