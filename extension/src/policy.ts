@@ -30,6 +30,8 @@ function normalizeForRules(text: string): string {
   return text
     .normalize("NFKC")
     .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    // Remove zero-width and bidi controls that can split copied social-media text.
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
     .replace(/[أإآٱ]/g, "ا")
     .replace(/ى/g, "ي")
     .replace(/\s+/g, " ")
