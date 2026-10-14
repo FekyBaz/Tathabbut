@@ -291,6 +291,40 @@ def main():
                     except Exception:
                         check("settings-restore-" + tag, "settings", True, False)
 
+                    # --- Target granularity: hiding one target must not hide
+                    # siblings, and each reveal restores exactly its target.
+                    check("granularity-tall-hidden-" + tag, "classification", True,
+                          hidden("tall-harass"))
+                    box = page.locator("#tall-harass").bounding_box()
+                    check("granularity-collapse-" + tag, "hide", True,
+                          box is not None and box["height"] < 100,
+                          "hidden tall article height=%s" % (box["height"] if box else None))
+                    check("granularity-sibling-visible-" + tag, "hide", False,
+                          hidden("sibling-clean"))
+                    check("granularity-sibling-comment-visible-" + tag, "hide", True,
+                          page.locator("#sibling-clean .comment").first.is_visible())
+                    page.locator("#ar-harass > .tathabbut-reveal").click()
+                    try:
+                        page.wait_for_function(
+                            "document.querySelectorAll('#ar-harass.tathabbut-hidden').length === 0",
+                            timeout=5000,
+                        )
+                        check("granularity-reveal-one-" + tag, "reveal", False,
+                              hidden("ar-harass"))
+                    except Exception:
+                        check("granularity-reveal-one-" + tag, "reveal", False, True)
+                    check("granularity-other-stays-hidden-" + tag, "reveal", True,
+                          hidden("en-threat"))
+                    # Edit-after-reveal re-hides: user override is not a whitelist.
+                    page.evaluate(
+                        "document.querySelector('#ar-harass .body').textContent = 'You are an idiot';"
+                    )
+                    try:
+                        page.wait_for_selector("#ar-harass.tathabbut-hidden", timeout=10000)
+                        check("granularity-edit-rehide-" + tag, "dynamic", True, True)
+                    except Exception:
+                        check("granularity-edit-rehide-" + tag, "dynamic", True, False)
+
                     # --- Lifecycle robustness: adversarial DOM churn. ---
                     # Replace (not append) a neutral article with harassing text.
                     page.evaluate(
