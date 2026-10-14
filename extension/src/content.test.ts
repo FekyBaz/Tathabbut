@@ -21,6 +21,9 @@ function fixture(): string {
     '<div role="article" id="' + CLEAN_POST + '"><div class="post-body">I love sunny days and long walks.</div></div>' +
     '<div role="article" id="' + NESTED_PARENT + '"><div class="post-body">Great match today!</div>' +
     '<div class="comment" id="comment-nested"><span>You are a loser</span></div></div>' +
+    '<div role="article" id="harmful-parent-clean-reply"><div class="post-body">You are an idiot</div>' +
+    '<div class="comment" id="clean-reply-inside-harmful-parent"><span>Thanks for explaining your point respectfully.</span></div></div>' +
+    '<div data-testid="comment-123" id="testid-comment-prefix"><span>You are a loser</span></div>' +
     '<div data-testid="comments" id="comments-container">' +
     '<div data-testid="comment" id="' + STANDALONE_COMMENT + '"><span>Shut up, you are pathetic</span></div>' +
     '<div data-testid="comment" id="' + STANDALONE_THREAT + '"><span>سوف اقتلك</span></div>' +
@@ -158,6 +161,24 @@ describe("content lifecycle on feed fixtures", () => {
     expect(isHidden(parent)).toBe(false);
     expect(revealButtons(parent)).toBe(0);
     expect(revealButtons(comment)).toBe(1);
+  });
+
+  it("hides only the harmful parent and preserves its clean nested comment", async () => {
+    document.body.innerHTML = fixture();
+    await loadContentModule();
+    const parent = byId("harmful-parent-clean-reply");
+    const reply = byId("clean-reply-inside-harmful-parent");
+    await vi.waitFor(() => expect(isHidden(parent)).toBe(true));
+    expect(isHidden(reply)).toBe(false);
+    expect(revealButtons(parent)).toBe(1);
+    expect(revealButtons(reply)).toBe(0);
+  });
+
+  it("discovers comment test IDs with a suffix without matching containers", async () => {
+    document.body.innerHTML = fixture();
+    await loadContentModule();
+    await vi.waitFor(() => expect(isHidden(byId("testid-comment-prefix"))).toBe(true));
+    expect(isHidden(byId("comments-container"))).toBe(false);
   });
 
   it("hides semantic comments without an article role, including the exact Arabic threat", async () => {
