@@ -196,15 +196,16 @@ def main():
 
                     expected_hidden = ["en-harass", "ar-harass", "en-threat", "en-spam",
                                        "ar-spam", "norm-diacritics", "dup-a", "dup-b",
-                                       "nested-parent-comment", "nested-threat-ar-comment"]
+                                       "nested-parent-comment", "nested-threat-ar-comment",
+                                       "standalone-comment", "standalone-threat", "standalone-threat-ar"]
                     for eid in expected_hidden:
                         got = hidden(eid)
                         check("hide-" + eid + "-" + tag, "classification", True, got)
                         if got:
                             check("single-control-" + eid + "-" + tag, "hide", 1, buttons(eid))
                     for eid in ["neutral-en", "respect-en", "respect-ar", "long-mixed",
-                                "spam-benign", "empty-article", "editable", "standalone-comment",
-                                "standalone-threat", "nested-parent", "nested-threat-ar"]:
+                                "spam-benign", "empty-article", "editable",
+                                "nested-parent", "nested-threat-ar"]:
                         check("visible-" + eid + "-" + tag, "threshold", False, hidden(eid))
 
                     articles = page.locator('[role="article"]').count()
