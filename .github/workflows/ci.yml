@@ -24,6 +24,26 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Set up Python for browser lab
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Playwright browser dependencies
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Run real-extension browser lab on Facebook-like DOM fixtures
+        run: xvfb-run -a python smoke/lab.py --hosts www,web,m
+      - name: Upload browser lab report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tathabbut-browser-lab-report
+          path: |
+            extension/smoke/lab-report.json
+            extension/smoke/artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Verify unpacked extension files
         run: |
           test -f dist/manifest.json
