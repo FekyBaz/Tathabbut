@@ -26,7 +26,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   apiUrl: ""
 };
 
-function normalizeForRules(text: string): string {
+export function normalizeForRules(text: string): string {
   return text
     .normalize("NFKC")
     .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
@@ -48,7 +48,7 @@ const patterns: Record<Category, RegExp[]> = {
     // High-confidence, targeted Egyptian Arabic bullying/put-down phrases.
     /(?:^|[\s،,.!?؟])(?:انت|انتي|انتوا|انتم)\s+(?:غبي|غبيه|اهبل|هبله|حمار|فاشل|فاشله|تافه|تافهه|حقير|حقيره|جاهل|جاهله)(?=$|[\s،,.!?؟])/u,
     /(?:^|[\s،,.!?؟])يا\s+(?:اهبل|هبله|متخلف|متخلفه|تافه|تافهه|حقير|حقيره)(?=$|[\s،,.!?؟])/u,
-    /(?:عبقري\s+زمانك|يا\s+سلام\s+على\s+(?:الفهم|الذكاء)|ما\s+شاء\s+الله\s+على\s+(?:الفهم|الذكاء)|فاهمه?\s+اوي)/u
+    /(?:عبقري\s+زمانك|يا\s+سلام\s+علي\s+(?:الفهم|الذكاء)|ما\s+شاء\s+الله\s+علي\s+(?:الفهم|الذكاء)|فاهمه?\s+اوي)/u
   ],
   hate: [
     /\b(?:all|every) (?:members of )?(?:group) are (?:vermin|subhuman)\b/i
@@ -76,16 +76,6 @@ export function classifyLocally(text: string): Classification {
     }
   }
 
-  // Narrow lexical cues for common sarcastic put-downs. Keep these patterns
-  // anchored to the distinctive phrase, not generic words like "smart".
-  const mockeryPatterns = [
-    /يا\\s+سلام\\s+على\\s+الذكاء/u,
-    /ما\\s+شاء\\s+الله\\s+على\\s+الفهم/u
-  ];
-  if (!labels.some((label) => label.category === "harassment") &&
-      mockeryPatterns.some((pattern) => pattern.test(normalized))) {
-    labels.push({ category: "harassment", score: 0.86 });
-  }
 
   return { labels, provider: "local-heuristic" };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, classifyLocally, isUsableRemoteClassification, shouldHide } from "./policy";
+import { DEFAULT_SETTINGS, classifyLocally, isUsableRemoteClassification, normalizeForRules, shouldHide } from "./policy";
 
 describe("classifyLocally", () => {
   it("detects a narrow direct English insult example", () => {
@@ -177,4 +177,21 @@ describe("live arabic threat سوف أقتلك", () => {
       expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
     }
   );
+});
+
+describe("normalization contract for rule authors", () => {
+  // Patterns run against normalized text, so literals must use the
+  // normalized spelling. This test locks the mapping that previously
+  // broke the على-spelled mockery rules (normalized على is علي).
+  it("maps alef-maqsura to ya", () => {
+    expect(normalizeForRules("على")).toBe("علي");
+  });
+  it("maps alef-with-madda to plain alef", () => {
+    expect(normalizeForRules("الآن")).toBe("الان");
+  });
+  it("strips diacritics, tatweel, and invisible controls", () => {
+    expect(normalizeForRules("إِنْتَ")).toBe("انت");
+    expect(normalizeForRules("غــبــي")).toBe("غبي");
+    expect(normalizeForRules("سوف\u200B أقتلك")).toBe("سوف اقتلك");
+  });
 });

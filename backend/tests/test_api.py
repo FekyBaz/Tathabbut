@@ -128,3 +128,30 @@ def test_arabic_future_threat_with_hamza() -> None:
     )
     assert response.status_code == 200
     assert response.json()["labels"][0]["category"] == "threats"
+
+
+def test_bullying_insult_parity_with_extension() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "\u0627\u0646\u062a \u0627\u0647\u0628\u0644", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_mockery_parity_with_extension() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "\u064a\u0627 \u0633\u0644\u0627\u0645 \u0639\u0644\u0649 \u0627\u0644\u0630\u0643\u0627\u0621", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"
+
+
+def test_egyptian_threat_variant_parity() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "\u0639\u0627\u064a\u0632 \u0627\u0642\u062a\u0644\u0643", "enabled_categories": ["threats"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "threats"

@@ -8,6 +8,9 @@ PATTERNS: dict[Category, tuple[re.Pattern[str], ...]] = {
         re.compile(r"\b(?:shut up|you are pathetic)\b", re.IGNORECASE),
         re.compile(r"(?:^|[\s،,.!?؟])(?:انت|انتي)\s+(?:غبي|غبيه|حمار|فاشل|فاشله)(?=$|[\s،,.!?؟])"),
         re.compile(r"(?:^|[\s،,.!?؟])يا\s+(?:غبي|غبيه|حمار|فاشل|فاشله)(?=$|[\s،,.!?؟])"),
+        re.compile(r"(?:^|[\s،,.!?؟])(?:انت|انتي|انتوا|انتم)\s+(?:غبي|غبيه|اهبل|هبله|حمار|فاشل|فاشله|تافه|تافهه|حقير|حقيره|جاهل|جاهله)(?=$|[\s،,.!?؟])"),
+        re.compile(r"(?:^|[\s،,.!?؟])يا\s+(?:اهبل|هبله|متخلف|متخلفه|تافه|تافهه|حقير|حقيره)(?=$|[\s،,.!?؟])"),
+        re.compile(r"(?:عبقري\s+زمانك|يا\s+سلام\s+علي\s+(?:الفهم|الذكاء)|ما\s+شاء\s+الله\s+علي\s+(?:الفهم|الذكاء)|فاهمه?\s+اوي)"),
     ),
     "hate": (
         re.compile(r"\b(?:all|every) (?:members of )?(?:group) are (?:vermin|subhuman)\b", re.IGNORECASE),
@@ -15,7 +18,7 @@ PATTERNS: dict[Category, tuple[re.Pattern[str], ...]] = {
     "threats": (
         re.compile(r"\b(?:i will|i'm going to) (?:kill|hurt|attack) you\b", re.IGNORECASE),
         re.compile(r"\b(?:i will|i'm going to) kill (?:him|her|them)\b", re.IGNORECASE),
-        re.compile(r"(?:^|[\s،,.!?؟])(?:هقتلك|هاذيك|هضربك|سوف\s+اقتلك|سوف\s+اذيك)(?=$|[\s،,.!?؟])"),
+        re.compile(r"(?:^|[\s،,.!?؟])(?:هقتلك|هاذيك|هضربك|سوف\s+اقتلك|سوف\s+اذيك|اريد\s+قتلك|عايز\s+اقتلك|عاوز\s+اقتلك)(?=$|[\s،,.!?؟])"),
         re.compile(r"(?:^|[\s،,.!?؟])(?:هقتل|هاذي|هضرب)(?:ه|ها|هم)(?=$|[\s،,.!?؟])"),
     ),
     "spam": (
@@ -29,6 +32,7 @@ PATTERNS: dict[Category, tuple[re.Pattern[str], ...]] = {
 def _normalize_for_rules(text: str) -> str:
     text = text[:4000].strip()
     text = re.sub(r"[\u064b-\u065f\u0670\u0640]", "", text)
+    text = re.sub(r"[\u200b-\u200f\u202a-\u202e\u2060\ufeff]", "", text)
     text = re.sub(r"[أإآٱ]", "ا", text)
     return re.sub(r"ى", "ي", re.sub(r"\s+", " ", text))
 
