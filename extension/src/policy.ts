@@ -76,14 +76,14 @@ export function classifyLocally(text: string): Classification {
     }
   }
 
-  // Phrase matching after normalization is explicit and easy to regression-test.
-  // These are narrow starter examples, not a general sarcasm detector.
-  const mockeryPhrases = [
-    "يا سلام على الذكاء",
-    "ما شاء الله على الفهم"
+  // Narrow lexical cues for common sarcastic put-downs. Keep these patterns
+  // anchored to the distinctive phrase, not generic words like "smart".
+  const mockeryPatterns = [
+    /يا\\s+سلام\\s+على\\s+الذكاء/u,
+    /ما\\s+شاء\\s+الله\\s+على\\s+الفهم/u
   ];
   if (!labels.some((label) => label.category === "harassment") &&
-      mockeryPhrases.some((phrase) => normalized.includes(phrase))) {
+      mockeryPatterns.some((pattern) => pattern.test(normalized))) {
     labels.push({ category: "harassment", score: 0.86 });
   }
 
