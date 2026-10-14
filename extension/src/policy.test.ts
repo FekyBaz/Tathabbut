@@ -128,6 +128,17 @@ describe("arabic normalization", () => {
   });
 });
 
+describe("Egyptian Arabic threat variants", () => {
+  it.each(["اريد قتلك", "أريد قتلك", "عايز اقتلك", "عاوز اقتلك", "سوف اقتلك", "سوف أقتلك"])(
+    "classifies the explicit threat variant: %s",
+    (text) => {
+      const result = classifyLocally(text);
+      expect(result.labels.map((label) => label.category)).toContain("threats");
+      expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+    }
+  );
+});
+
 describe("live arabic threat سوف أقتلك", () => {
   // Proven live case: the classifier matches all common spellings.
   // If this text stays visible live, the cause is discovery
