@@ -197,7 +197,7 @@ def main():
                     expected_hidden = ["en-harass", "ar-harass", "en-threat", "en-spam",
                                        "ar-spam", "norm-diacritics", "dup-a", "dup-b",
                                        "nested-parent-comment", "nested-threat-ar-comment",
-                                       "standalone-comment", "standalone-threat", "standalone-threat-ar"]
+                                       "standalone-comment", "standalone-threat", "standalone-threat-ar", "standalone-paragraph"]
                     for eid in expected_hidden:
                         got = hidden(eid)
                         check("hide-" + eid + "-" + tag, "classification", True, got)
