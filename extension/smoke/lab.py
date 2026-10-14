@@ -198,7 +198,8 @@ def main():
                                        "ar-spam", "norm-diacritics", "dup-a", "dup-b",
                                        "nested-parent-comment", "nested-threat-ar-comment",
                                        "standalone-comment", "standalone-threat", "standalone-threat-ar",
-                                       "standalone-paragraph", "fb-comment-threat", "fb-comment-nested-child"]
+                                       "standalone-paragraph", "fb-comment-threat", "fb-comment-nested-child",
+                                       "harmful-parent-clean-reply", "testid-comment-prefix"]
                     for eid in expected_hidden:
                         got = hidden(eid)
                         check("hide-" + eid + "-" + tag, "classification", True, got)
@@ -207,9 +208,13 @@ def main():
                     for eid in ["neutral-en", "respect-en", "respect-ar", "long-mixed",
                                 "spam-benign", "empty-article", "editable",
                                 "nested-parent", "nested-threat-ar",
-                                "fb-comment-respect", "fb-comment-thread"]:
+                                "fb-comment-respect", "fb-comment-thread", "clean-reply-inside-harmful-parent"]:
                         check("visible-" + eid + "-" + tag, "threshold", False, hidden(eid))
 
+                    check("comments-container-visible-" + tag, "hide", False,
+                          hidden("fb-comments-container"))
+                    check("clean-reply-inside-hidden-parent-visible-" + tag, "hide", True,
+                          page.locator("#clean-reply-inside-harmful-parent").is_visible())
                     articles = page.locator('[role="article"]').count()
                     check("discovery-count-" + tag, "discovery", True, articles >= 16,
                           "articles=%d" % articles)
