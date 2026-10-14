@@ -204,7 +204,7 @@ export function reveal(element: Element): void {
   element.classList.remove(HIDDEN_CLASS);
   element.removeAttribute("data-tathabbut-hidden");
   element.querySelectorAll(":scope > .tathabbut-reveal").forEach((button) => button.remove());
-  element.querySelectorAll(".tathabbut-hidden-text").forEach((wrapper) => {
+  element.querySelectorAll(":scope > .tathabbut-hidden-text").forEach((wrapper) => {
     wrapper.replaceWith(document.createTextNode(wrapper.textContent ?? ""));
   });
 }
