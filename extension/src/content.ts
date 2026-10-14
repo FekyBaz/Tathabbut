@@ -262,7 +262,6 @@ export function evaluate(element: Element): void {
   }
 
   // A changed post invalidates the previous decision immediately; stale async results cannot re-hide it.
-  stats.evaluated += 1;
   reveal(element);
   const state: ItemState = { fingerprint, settingsVersion };
   itemStates.set(element, state);
@@ -285,7 +284,9 @@ export function evaluate(element: Element): void {
     stats.lastReason = "queue-full";
     void persistStatus(false);
     debugLog("skip", { reason: "queue-full", fingerprint });
+    return;
   }
+  stats.evaluated += 1;
 }
 
 export function scan(): void {
