@@ -53,7 +53,7 @@ const patterns: Record<Category, RegExp[]> = {
     /(?:^|[\s،,.!?؟])(?:انت|انتي|انتوا|انتم)\s+(?:غبي[هة]?|اهبل|هبل[هة]?|حمار|فاشل[هة]?|تافه[هة]?|حقير[هة]?|جاهل[هة]?)(?=$|[\s،,.!?؟])/u,
     /(?:^|[\s،,.!?؟])يا\s+(?:اهبل|هبل[هة]?|متخلف[هة]?|تافه[هة]?|حقير[هة]?|جاهل[هة]?)(?=$|[\s،,.!?؟])/u,
     // Narrow standalone Egyptian Arabic put-downs seen in the live report.
-    /(?:^|[\\s،,.!?؟])(?:غبي[هة]?|فاشل[هة]?|جاهل)(?=$|[\\s،,.!?؟])/u,
+    /(?:^|[\s،,.!?؟])(?:غبي[هة]?|فاشل[هة]?|جاهل)(?=$|[\s،,.!?؟])/u,
     /(?:عبقري\s+زمانك|عالم\s+زمانك|يا\s+سلام\s+علي\s+(?:الفهم|الذكاء)|ما\s+شاء\s+الله\s+علي\s+(?:الفهم|الذكاء)|فاهمه?\s+اوي|فاكر\s+نفسك\s+مين)/u,
     // Targeted belittling: possessive or second-person dismissal phrases.
     // Each alternative is a complete multi-word phrase, never a lone word.
