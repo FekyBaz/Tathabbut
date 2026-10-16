@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -11,6 +11,7 @@
       label { display: block; margin: 10px 0; }
       input[type="url"] { box-sizing: border-box; width: 100%; padding: 8px; }
       input[type="range"] { width: 100%; }
+      select { padding: 8px; }
       button { padding: 8px 12px; cursor: pointer; }
       .row { display: flex; align-items: center; gap: 8px; }
       #status { min-height: 1.4em; }
@@ -23,38 +24,43 @@
   </head>
   <body>
     <h1>Tathabbut <span lang="ar">تثبّت</span></h1>
-    <p class="muted">Hide locally. Restore anytime.</p>
-    <label class="row"><input id="enabled" type="checkbox" /> Enable filtering</label>
+    <p class="muted" id="appSubtitle"></p>
+    <label class="row"><input id="enabled" type="checkbox" /> <span id="enabledLabel"></span></label>
     <fieldset>
-      <legend>Filter categories</legend>
-      <label><input type="checkbox" name="category" value="harassment" /> Personal insults / harassment</label>
-      <label><input type="checkbox" name="category" value="hate" /> Hateful or dehumanizing attacks</label>
-      <label><input type="checkbox" name="category" value="threats" /> Threats of violence</label>
-      <label><input type="checkbox" name="category" value="spam" /> Spam</label>
+      <legend id="categoriesLegend"></legend>
+      <label><input type="checkbox" name="category" value="harassment" /> <span id="cat-harassment"></span></label>
+      <label><input type="checkbox" name="category" value="hate" /> <span id="cat-hate"></span></label>
+      <label><input type="checkbox" name="category" value="threats" /> <span id="cat-threats"></span></label>
+      <label><input type="checkbox" name="category" value="spam" /> <span id="cat-spam"></span></label>
     </fieldset>
-    <label for="threshold">Confidence threshold: <strong id="thresholdValue">85%</strong></label>
+    <label for="threshold"><span id="thresholdLabel"></span> <strong id="thresholdValue">85%</strong></label>
     <input id="threshold" type="range" min="50" max="99" value="85" />
-    <label for="apiUrl">Optional self-hosted API origin</label>
+    <label for="apiUrl" id="apiLabel"></label>
     <input id="apiUrl" type="url" placeholder="http://127.0.0.1:8000" autocomplete="off" />
-    <p class="muted">Enter the origin only; /v1/classify is appended automatically. Leave blank for local-only mode. HTTPS is required except for localhost. You will be asked to grant access to this host. Never paste provider API keys here.</p>
-    <button id="save" type="button">Save settings</button>
+    <p class="muted" id="apiHint"></p>
+    <label for="language" id="languageLabel"></label>
+    <select id="language">
+      <option value="ar" id="lang-ar"></option>
+      <option value="en" id="lang-en"></option>
+    </select>
+    <p><button id="save" type="button"></button></p>
     <p id="status" role="status" aria-live="polite"></p>
     <fieldset>
-      <legend>Diagnostics</legend>
-      <label class="row"><input id="debug" type="checkbox" /> Enable diagnostic mode (this device only)</label>
-      <p class="muted">Shows whether the content script runs and what it finds. Counts and reasons only — never post text or names, and nothing leaves this device.</p>
+      <legend id="diagnosticsLegend"></legend>
+      <label class="row"><input id="debug" type="checkbox" /> <span id="diagnosticsToggle"></span></label>
+      <p class="muted" id="diagnosticsHint"></p>
       <dl class="diag">
-        <div><dt>Content script</dt><dd id="st-started">—</dd></div>
-        <div><dt>Settings</dt><dd id="st-settings">—</dd></div>
-        <div><dt>Content units found</dt><dd id="st-articles">—</dd></div>
-        <div><dt>Evaluated / classified / hidden / skipped</dt><dd id="st-counts">—</dd></div>
-        <div><dt>Last outcome</dt><dd id="st-reason">—</dd></div>
-        <div><dt>Skipped by cause</dt><dd id="st-skips">—</dd></div>
-        <div><dt>Status updated</dt><dd id="st-updated">—</dd></div>
-        <div><dt>Reported from</dt><dd id="st-source">—</dd></div>
+        <div><dt id="dt-started"></dt><dd id="st-started">—</dd></div>
+        <div><dt id="dt-settings"></dt><dd id="st-settings">—</dd></div>
+        <div><dt id="dt-articles"></dt><dd id="st-articles">—</dd></div>
+        <div><dt id="dt-counts"></dt><dd id="st-counts">—</dd></div>
+        <div><dt id="dt-reason"></dt><dd id="st-reason">—</dd></div>
+        <div><dt id="dt-skips"></dt><dd id="st-skips">—</dd></div>
+        <div><dt id="dt-updated"></dt><dd id="st-updated">—</dd></div>
+        <div><dt id="dt-source"></dt><dd id="st-source">—</dd></div>
       </dl>
-      <p class="muted">With several Facebook tabs open, this reflects the most recently updated tab. Pinpointing the exact tab would need extra browser permissions, which this extension does not request.</p>
-      <button id="refreshStatus" type="button">Refresh status</button>
+      <p class="muted" id="tabNote"></p>
+      <button id="refreshStatus" type="button"></button>
     </fieldset>
     <script type="module" src="popup.js"></script>
   </body>

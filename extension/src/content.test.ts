@@ -238,6 +238,44 @@ describe("content lifecycle on feed fixtures", () => {
     expect(revealButtons(added)).toBe(1);
   });
 
+  it("shows the hidden notice in Arabic by default", async () => {
+    document.body.innerHTML = fixture();
+    await loadContentModule();
+    const post = byId(MATCHING_POST);
+    await vi.waitFor(() => expect(isHidden(post)).toBe(true));
+    const button = post.querySelector(".tathabbut-reveal") as HTMLButtonElement;
+    expect(button.textContent).toBe("إظهار المحتوى");
+    const notice = post.querySelector(".tathabbut-notice") as HTMLElement;
+    expect(notice.textContent).toContain("تم إخفاء هذا المحتوى بواسطة تثبّت.");
+    expect(notice.getAttribute("lang")).toBe("ar");
+  });
+
+  it("shows the hidden notice in English when selected", async () => {
+    storedSettings = { ...DEFAULT_SETTINGS, language: "en" };
+    document.body.innerHTML = fixture();
+    await loadContentModule();
+    const post = byId(MATCHING_POST);
+    await vi.waitFor(() => expect(isHidden(post)).toBe(true));
+    const button = post.querySelector(".tathabbut-reveal") as HTMLButtonElement;
+    expect(button.textContent).toBe("Reveal content");
+    const notice = post.querySelector(".tathabbut-notice") as HTMLElement;
+    expect(notice.textContent).toContain("This content was hidden by Tathabbut.");
+  });
+
+  it("re-renders hidden notices after a language change", async () => {
+    document.body.innerHTML = fixture();
+    await loadContentModule();
+    const post = byId(MATCHING_POST);
+    await vi.waitFor(() => expect(isHidden(post)).toBe(true));
+    expect((post.querySelector(".tathabbut-reveal") as HTMLElement).textContent).toBe("إظهار المحتوى");
+    storedSettings = { ...DEFAULT_SETTINGS, language: "en" };
+    fireStorageChange();
+    await vi.waitFor(() => expect(
+      (post.querySelector(".tathabbut-reveal") as HTMLElement).textContent
+    ).toBe("Reveal content"));
+    expect(isHidden(post)).toBe(true);
+  });
+
   it("keeps the reveal control out of the classified text", async () => {
     document.body.innerHTML = fixture();
     const mod = await loadContentModule();

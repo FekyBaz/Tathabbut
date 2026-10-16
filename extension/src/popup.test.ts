@@ -102,10 +102,18 @@ async function loadPopupModule() {
   await settle();
 }
 
+async function switchLanguage(value: "ar" | "en"): Promise<void> {
+  const select = document.getElementById("language") as HTMLSelectElement;
+  select.value = value;
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+  await settle(150);
+}
+
 describe("popup diagnostics panel", () => {
   it("renders the stored status into the panel", async () => {
     localStore[STATUS_KEY] = freshSnapshot();
     await loadPopupModule();
+    await switchLanguage("en");
     expect(text("st-source")).toBe("www.facebook.com");
     expect(text("st-articles")).toBe("5");
     expect(text("st-counts")).toBe("5 / 5 / 2 / 6");
@@ -117,18 +125,21 @@ describe("popup diagnostics panel", () => {
   it("shows a readable error when status storage fails", async () => {
     localGetFails = true;
     await loadPopupModule();
+    await switchLanguage("en");
     expect(text("st-started")).toContain("Could not read diagnostic storage");
     expect(text("st-articles")).toBe("—");
   });
 
   it("reports a missing snapshot honestly", async () => {
     await loadPopupModule();
+    await switchLanguage("en");
     expect(text("st-started")).toContain("Not reported yet");
   });
 
   it("labels a stale snapshot as stale", async () => {
     localStore[STATUS_KEY] = freshSnapshot({ updatedAt: Date.now() - 10 * 60_000 });
     await loadPopupModule();
+    await switchLanguage("en");
     expect(text("st-started")).toContain("stale");
     expect(text("st-articles")).toBe("5");
   });
@@ -174,6 +185,7 @@ describe("popup save flow", () => {
 
   it("persists local-only settings including the threshold", async () => {
     await loadPopupModule();
+    await switchLanguage("en");
     (document.getElementById("threshold") as HTMLInputElement).value = "90";
     (document.getElementById("save") as HTMLButtonElement).click();
     await settle(150);
@@ -183,7 +195,8 @@ describe("popup save flow", () => {
         enabled: true,
         enabledCategories: ["harassment", "hate", "threats", "spam"],
         threshold: 0.9,
-        apiUrl: ""
+        apiUrl: "",
+        language: "en"
       }
     });
     expect(request).not.toHaveBeenCalled();
@@ -193,10 +206,63 @@ describe("popup save flow", () => {
   it("rejects an invalid API URL without saving", async () => {
     await loadPopupModule();
     (document.getElementById("apiUrl") as HTMLInputElement).value = "http://api.example.com";
+    // Default language is Arabic: the localized HTTPS error still names the scheme.
     (document.getElementById("save") as HTMLButtonElement).click();
     await settle(150);
     const { set } = mocks();
     expect(set).not.toHaveBeenCalled();
-    expect(text("status")).not.toBe("");
+    expect(text("status")).toContain("HTTPS");
+  });
+});
+
+describe("popup language", () => {
+  function syncSet() {
+    const chromeApi = (globalThis as unknown as {
+      chrome: { storage: { sync: { set: ReturnType<typeof vi.fn> } } };
+    }).chrome;
+    return vi.mocked(chromeApi.storage.sync.set);
+  }
+
+  it("defaults to Arabic with RTL for fresh installs", async () => {
+    await loadPopupModule();
+    expect(document.documentElement.dir).toBe("rtl");
+    expect(document.documentElement.lang).toBe("ar");
+    expect(document.title).toBe("إعدادات تثبّت");
+    expect(text("save")).toBe("حفظ الإعدادات");
+    expect(text("thresholdLabel")).toContain("عتبة الثقة");
+    expect(text("st-started")).toContain("لا يوجد تقرير");
+  });
+
+  it("falls back to Arabic for invalid stored values", async () => {
+    storedSettings = { ...DEFAULT_SETTINGS, language: "xx" };
+    await loadPopupModule();
+    expect(document.documentElement.dir).toBe("rtl");
+    expect(text("save")).toBe("حفظ الإعدادات");
+  });
+
+  it("switches to English, persists it, and flips direction", async () => {
+    localStore[STATUS_KEY] = freshSnapshot();
+    await loadPopupModule();
+    await switchLanguage("en");
+    expect(document.documentElement.dir).toBe("ltr");
+    expect(document.documentElement.lang).toBe("en");
+    expect(text("save")).toBe("Save settings");
+    expect(text("st-started")).toContain("Running since");
+    expect(syncSet()).toHaveBeenCalledWith(
+      expect.objectContaining({ tathabbutSettings: expect.objectContaining({ language: "en" }) })
+    );
+  });
+
+  it("keeps the language choice when saving other settings", async () => {
+    await loadPopupModule();
+    await switchLanguage("en");
+    (document.getElementById("save") as HTMLButtonElement).click();
+    await settle(150);
+    expect(syncSet()).toHaveBeenCalledWith(
+      expect.objectContaining({ tathabbutSettings: expect.objectContaining({ language: "en" }) })
+    );
+    expect(syncSet()).toHaveBeenCalledWith(
+      expect.objectContaining({ tathabbutSettings: expect.objectContaining({ threshold: 0.85 }) })
+    );
   });
 });

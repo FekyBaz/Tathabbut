@@ -1,3 +1,5 @@
+import { DEFAULT_LANGUAGE, type Language } from "./i18n";
+
 export const CATEGORIES = ["harassment", "hate", "threats", "spam"] as const;
 
 export type Category = (typeof CATEGORIES)[number];
@@ -17,13 +19,15 @@ export interface UserSettings {
   enabledCategories: Category[];
   threshold: number;
   apiUrl: string;
+  language: Language;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
   enabled: true,
   enabledCategories: ["harassment", "hate", "threats", "spam"],
   threshold: 0.85,
-  apiUrl: ""
+  apiUrl: "",
+  language: DEFAULT_LANGUAGE
 };
 
 export function normalizeForRules(text: string): string {

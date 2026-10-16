@@ -3,7 +3,7 @@
 }
 /* Collapse only the classified unit's own content. Never clip nested posts,
    replies, or sibling comment units inside a hidden parent. */
-.tathabbut-hidden > :not(.tathabbut-reveal):not([role="article"]):not([role="comment"]):not([data-testid="comment" i]):not([data-testid^="comment-" i]):not(.comment) {
+.tathabbut-hidden > :not(.tathabbut-reveal):not(.tathabbut-notice):not([role="article"]):not([role="comment"]):not([data-testid="comment" i]):not([data-testid^="comment-" i]):not(.comment) {
   display: block;
   max-height: 3.25rem !important;
   overflow: hidden !important;
@@ -25,6 +25,16 @@
   filter: none;
   opacity: 1;
   cursor: pointer;
+}
+.tathabbut-notice {
+  display: block;
+  position: relative;
+  z-index: 2147483647;
+  margin: 0.25rem;
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+  filter: none;
+  opacity: 1;
 }
 .tathabbut-reveal:focus-visible {
   outline: 2px solid currentColor;

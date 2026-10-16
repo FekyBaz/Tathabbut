@@ -1,5 +1,6 @@
 import { CATEGORIES, DEFAULT_SETTINGS, classifyLocally, isUsableRemoteClassification, shouldHide, type Category, type Classification, type LabelScore, type UserSettings } from "./policy";
 import { DEBUG_FLAG_KEY, STATUS_KEY, type ContentStatus } from "./diagnostics";
+import { pickLanguage, t } from "./i18n";
 import { BoundedTaskQueue, fingerprintText, normalizeText } from "./text-engine";
 
 const ARTICLE_SELECTOR = '[role="article"]';
@@ -128,7 +129,9 @@ export function readText(element: Element): string {
   // Do not mix the text of a post with separately represented comments.
   // Cloning also ensures extraction never mutates the live page DOM.
   const clone = element.cloneNode(true) as Element;
-  clone.querySelectorAll(ARTICLE_SELECTOR + ", " + COMMENT_SELECTOR + ", .tathabbut-reveal")
+  clone.querySelectorAll(
+    ARTICLE_SELECTOR + ", " + COMMENT_SELECTOR + ", .tathabbut-reveal, .tathabbut-notice"
+  )
     .forEach((nestedUnit) => nestedUnit.remove());
   return normalizeText(clone.textContent ?? "").slice(0, MAX_TEXT_LENGTH);
 }
@@ -203,7 +206,9 @@ function wrapDirectTextNodes(element: Element): void {
 export function reveal(element: Element): void {
   element.classList.remove(HIDDEN_CLASS);
   element.removeAttribute("data-tathabbut-hidden");
-  element.querySelectorAll(":scope > .tathabbut-reveal").forEach((button) => button.remove());
+  element
+    .querySelectorAll(":scope > .tathabbut-reveal, :scope > .tathabbut-notice")
+    .forEach((control) => control.remove());
   element.querySelectorAll(":scope > .tathabbut-hidden-text").forEach((wrapper) => {
     wrapper.replaceWith(document.createTextNode(wrapper.textContent ?? ""));
   });
@@ -265,13 +270,19 @@ export function applyResult(element: Element, result: Classification): void {
   wrapDirectTextNodes(element);
   element.classList.add(HIDDEN_CLASS);
   element.setAttribute("data-tathabbut-hidden", "true");
+  const strings = t(settings.language);
+  const notice = document.createElement("span");
+  notice.className = "tathabbut-notice";
+  notice.setAttribute("lang", settings.language === "ar" ? "ar" : "en");
+  notice.textContent = strings.noticeHidden + " " + strings.noticeSupport;
   const button = document.createElement("button");
   button.type = "button";
   button.className = "tathabbut-reveal";
-  button.textContent = "Tathabbut: reveal hidden content";
-  button.setAttribute("aria-label", "Reveal content hidden by Tathabbut");
+  button.textContent = strings.revealLabel;
+  button.setAttribute("aria-label", strings.revealAria);
   button.addEventListener("click", () => reveal(element), { once: true });
   element.prepend(button);
+  element.prepend(notice);
   stats.hidden += 1;
   stats.lastReason = decision.reason;
   void persistStatus(true);
@@ -393,7 +404,8 @@ async function loadSettings(): Promise<void> {
           : [...DEFAULT_SETTINGS.enabledCategories],
         threshold: typeof candidate.threshold === "number" && candidate.threshold >= 0 && candidate.threshold <= 1
           ? candidate.threshold : DEFAULT_SETTINGS.threshold,
-        apiUrl: typeof candidate.apiUrl === "string" ? candidate.apiUrl.trim() : ""
+        apiUrl: typeof candidate.apiUrl === "string" ? candidate.apiUrl.trim() : "",
+        language: pickLanguage(candidate.language)
       };
     } else {
       settings = { ...DEFAULT_SETTINGS, enabledCategories: [...DEFAULT_SETTINGS.enabledCategories] };

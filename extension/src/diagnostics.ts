@@ -25,7 +25,9 @@ export interface ContentStatus {
   updatedAt: number;
 }
 
-const REASON_TEXT: Record<string, string> = {
+import type { Language } from "./i18n";
+
+const REASON_TEXT_EN: Record<string, string> = {
   "rule-match": "A rule matched and the item was hidden.",
   "no-rule-match": "No rule matched the text.",
   "below-threshold": "A rule matched, but its score is under the threshold.",
@@ -37,12 +39,43 @@ const REASON_TEXT: Record<string, string> = {
   "starting": "The content script has not finished its first check yet."
 };
 
-export function describeReason(reason: string): string {
-  return REASON_TEXT[reason] ?? reason;
+const REASON_TEXT_AR: Record<string, string> = {
+  "rule-match": "طابقت قاعدة وأُخفي العنصر.",
+  "no-rule-match": "لا قاعدة طابقت النص.",
+  "below-threshold": "طابقت قاعدة لكن درجتها تحت العتبة.",
+  "category-disabled": "الفئة المطابَقة مغلقة.",
+  "filter-disabled": "التصفية مغلقة.",
+  "empty-text": "العنصر بلا نص مقروء.",
+  "unchanged": "العنصر لم يتغير منذ آخر فحص.",
+  "queue-full": "طابور العمل كان ممتلئًا؛ سيُعاد العنصر مع التغيير التالي.",
+  "starting": "سكربت المحتوى لم يُنه الفحص الأول بعد."
+};
+
+export function describeReason(reason: string, lang: Language = "en"): string {
+  const table = lang === "ar" ? REASON_TEXT_AR : REASON_TEXT_EN;
+  return table[reason] ?? reason;
 }
 
-export function formatStatusAge(updatedAt: number, now: number = Date.now()): string {
+export function formatStatusAge(updatedAt: number, lang: Language = "en", now: number = Date.now()): string {
   const ageMs = now - updatedAt;
+  if (lang === "ar") {
+    if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs < 1000) return "الآن";
+    const seconds = Math.floor(ageMs / 1000);
+    if (seconds < 60) {
+      if (seconds === 1) return "منذ ثانية";
+      if (seconds === 2) return "منذ ثانيتين";
+      if (seconds <= 10) return "منذ " + seconds + " ثوانٍ";
+      return "منذ " + seconds + " ثانية";
+    }
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) {
+      if (minutes === 1) return "منذ دقيقة";
+      if (minutes === 2) return "منذ دقيقتين";
+      if (minutes <= 10) return "منذ " + minutes + " دقائق";
+      return "منذ " + minutes + " دقيقة";
+    }
+    return "قديمة (أقدم من ساعة)";
+  }
   if (!Number.isFinite(ageMs) || ageMs < 0) return "just now";
   if (ageMs < 5000) return "just now";
   const seconds = Math.floor(ageMs / 1000);
@@ -84,11 +117,14 @@ const DASH = "—";
  */
 export function statusViewModel(
   input: { snapshot?: ContentStatus; storageError: boolean },
+  lang: Language = "en",
   now: number = Date.now()
 ): StatusView {
   if (input.storageError) {
     return {
-      started: "Could not read diagnostic storage on this device.",
+      started: lang === "ar"
+        ? "تعذر قراءة مساحة التشخيص على هذا الجهاز."
+        : "Could not read diagnostic storage on this device.",
       settings: DASH,
       articles: DASH,
       counts: DASH,
@@ -101,7 +137,9 @@ export function statusViewModel(
   const snapshot = input.snapshot;
   if (!snapshot) {
     return {
-      started: "Not reported yet — open Facebook so the content script can run.",
+      started: lang === "ar"
+        ? "لا يوجد تقرير بعد — افتح فيسبوك ليعمل سكربت المحتوى."
+        : "Not reported yet — open Facebook so the content script can run.",
       settings: DASH,
       articles: DASH,
       counts: DASH,
@@ -115,28 +153,38 @@ export function statusViewModel(
     articles: String(snapshot.articlesFound),
     counts:
       snapshot.evaluated + " / " + snapshot.classified + " / " + snapshot.hidden + " / " + snapshot.skipped,
-    reason: describeReason(snapshot.lastReason),
-    skips:
-      snapshot.skippedUnchanged + " unchanged · " +
-      snapshot.skippedEmpty + " empty · " +
-      snapshot.skippedDisabled + " disabled · " +
-      snapshot.skippedQueueFull + " queue-full",
-    updated: formatStatusAge(snapshot.updatedAt, now),
-    source: snapshot.origin || "unknown site"
+    reason: describeReason(snapshot.lastReason, lang),
+    skips: lang === "ar"
+      ? snapshot.skippedUnchanged + " بلا تغيير · " +
+        snapshot.skippedEmpty + " فارغ · " +
+        snapshot.skippedDisabled + " والتصفية مغلقة · " +
+        snapshot.skippedQueueFull + " ازدحام الطابور"
+      : snapshot.skippedUnchanged + " unchanged · " +
+        snapshot.skippedEmpty + " empty · " +
+        snapshot.skippedDisabled + " disabled · " +
+        snapshot.skippedQueueFull + " queue-full",
+    updated: formatStatusAge(snapshot.updatedAt, lang, now),
+    source: snapshot.origin || (lang === "ar" ? "موقع غير معروف" : "unknown site")
   };
   if (!isFreshStatus(snapshot, now)) {
     return {
       ...known,
-      started: "Reported earlier (stale) — open Facebook so the content script can update it.",
+      started: lang === "ar"
+        ? "بُلغ سابقًا (قديم) — افتح فيسبوك ليحدّث سكربت المحتوى."
+        : "Reported earlier (stale) — open Facebook so the content script can update it.",
       settings: DASH
     };
   }
   return {
     ...known,
-    started: "Running since " + new Date(snapshot.startedAt).toLocaleTimeString() + ".",
+    started: lang === "ar"
+      ? "يعمل منذ " + new Date(snapshot.startedAt).toLocaleTimeString() + "."
+      : "Running since " + new Date(snapshot.startedAt).toLocaleTimeString() + ".",
     settings: snapshot.settingsOk
-      ? (snapshot.enabled ? "on" : "off") + " · " + snapshot.apiMode + " · " +
-        snapshot.categories + " categories · threshold " + snapshot.threshold
-      : "defaults (storage read failed)"
+      ? (snapshot.enabled
+        ? (lang === "ar" ? "مفعّل" : "on")
+        : (lang === "ar" ? "مغلق" : "off")) + " · " + snapshot.apiMode + " · " +
+        snapshot.categories + (lang === "ar" ? " فئات · العتبة " : " categories · threshold ") + snapshot.threshold
+      : (lang === "ar" ? "الافتراضيات (تعذرت قراءة التخزين)" : "defaults (storage read failed)")
   };
 }

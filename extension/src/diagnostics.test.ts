@@ -58,10 +58,26 @@ describe("diagnostics helpers", () => {
   });
 
   it("formats status age without leaking anything", () => {
-    expect(formatStatusAge(1000, 1000)).toBe("just now");
-    expect(formatStatusAge(1000, 46_000)).toBe("45s ago");
-    expect(formatStatusAge(1000, 121_000)).toBe("2m ago");
-    expect(formatStatusAge(1000, 3_700_000)).toBe("stale (over an hour old)");
+    expect(formatStatusAge(1000, "en", 1000)).toBe("just now");
+    expect(formatStatusAge(1000, "en", 46_000)).toBe("45s ago");
+    expect(formatStatusAge(1000, "en", 121_000)).toBe("2m ago");
+    expect(formatStatusAge(1000, "en", 3_700_000)).toBe("stale (over an hour old)");
+  });
+
+  it("formats status age in Arabic", () => {
+    expect(formatStatusAge(1000, "ar", 1000)).toBe("الآن");
+    expect(formatStatusAge(1000, "ar", 2000)).toBe("منذ ثانية");
+    expect(formatStatusAge(1000, "ar", 3000)).toBe("منذ ثانيتين");
+    expect(formatStatusAge(1000, "ar", 6000)).toBe("منذ 5 ثوانٍ");
+    expect(formatStatusAge(1000, "ar", 46_000)).toBe("منذ 45 ثانية");
+    expect(formatStatusAge(1000, "ar", 121_000)).toBe("منذ دقيقتين");
+    expect(formatStatusAge(1000, "ar", 3_700_000)).toBe("قديمة (أقدم من ساعة)");
+  });
+
+  it("explains reasons in Arabic", () => {
+    expect(describeReason("rule-match", "ar")).toBe("طابقت قاعدة وأُخفي العنصر.");
+    expect(describeReason("below-threshold", "ar")).toContain("العتبة");
+    expect(describeReason("something-new", "ar")).toBe("something-new");
   });
 
   it("treats missing or stale snapshots as not fresh", () => {
@@ -87,6 +103,7 @@ describe("statusViewModel", () => {
   it("labels a stale snapshot as stale while keeping last-known values", () => {
     const view = statusViewModel(
       { snapshot: sampleStatus(), storageError: false },
+      "en",
       2000 + 10 * 60_000
     );
     expect(view.started).toContain("stale");
@@ -97,12 +114,25 @@ describe("statusViewModel", () => {
   it("renders a fresh snapshot with its reporting site", () => {
     const view = statusViewModel(
       { snapshot: sampleStatus(), storageError: false },
+      "en",
       2000 + 10_000
     );
     expect(view.started).toContain("Running since");
     expect(view.settings).toContain("threshold 0.85");
     expect(view.counts).toBe("3 / 3 / 1 / 4");
     expect(view.skips).toBe("2 unchanged · 1 empty · 0 disabled · 1 queue-full");
+    expect(view.source).toBe("www.facebook.com");
+  });
+
+  it("renders a fresh snapshot in Arabic", () => {
+    const view = statusViewModel(
+      { snapshot: sampleStatus(), storageError: false },
+      "ar",
+      2000 + 10_000
+    );
+    expect(view.started).toContain("يعمل منذ");
+    expect(view.settings).toContain("العتبة");
+    expect(view.reason).toContain("أُخفي");
     expect(view.source).toBe("www.facebook.com");
   });
 });

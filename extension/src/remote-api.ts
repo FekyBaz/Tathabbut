@@ -1,3 +1,22 @@
+export type ApiUrlProblem =
+  | "scheme"
+  | "credentials"
+  | "query"
+  | "path"
+  | "https";
+
+export class ApiUrlError extends Error {
+  readonly problem: ApiUrlProblem;
+  constructor(problem: ApiUrlProblem, message: string) {
+    super(message);
+    this.problem = problem;
+  }
+}
+
+export function apiProblemOf(error: unknown): ApiUrlProblem | null {
+  return error instanceof ApiUrlError ? error.problem : null;
+}
+
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 export function normalizeApiUrl(raw: string): string {
@@ -5,19 +24,19 @@ export function normalizeApiUrl(raw: string): string {
   if (!value) return "";
   const parsed = new URL(value);
   if (!["https:", "http:"].includes(parsed.protocol)) {
-    throw new Error("API URL must use HTTP or HTTPS.");
+    throw new ApiUrlError("scheme", "API URL must use HTTP or HTTPS.");
   }
   if (parsed.username || parsed.password) {
-    throw new Error("API URL must not contain credentials.");
+    throw new ApiUrlError("credentials", "API URL must not contain credentials.");
   }
   if (parsed.search || parsed.hash) {
-    throw new Error("API URL must not contain a query string or fragment.");
+    throw new ApiUrlError("query", "API URL must not contain a query string or fragment.");
   }
   if (parsed.pathname !== "/") {
-    throw new Error("Enter the API origin only; /v1/classify is appended automatically.");
+    throw new ApiUrlError("path", "Enter the API origin only; /v1/classify is appended automatically.");
   }
   if (parsed.protocol === "http:" && !LOOPBACK_HOSTS.has(parsed.hostname.toLowerCase())) {
-    throw new Error("Non-local API URLs must use HTTPS.");
+    throw new ApiUrlError("https", "Non-local API URLs must use HTTPS.");
   }
   return parsed.origin;
 }
