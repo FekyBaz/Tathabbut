@@ -128,6 +128,18 @@ describe("arabic normalization", () => {
   });
 });
 
+describe("live Egyptian Arabic standalone put-down regression", () => {
+  it.each(["غبي", "انت غبي", "فاشل", "فاشله", "جاهل", "ملكش لازمة"])("classifies %s as harassment at the default threshold", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each(["رأيك مش دقيق ومحتاج دليل", "أنا مختلف معاك في الرأي"])("keeps respectful criticism visible: %s", (text) => {
+    expect(classifyLocally(text).labels).toEqual([]);
+  });
+});
+
 describe("Arabic bullying, mockery, and personal put-downs", () => {
   it.each([
     "انت غبي",
