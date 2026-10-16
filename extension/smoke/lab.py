@@ -198,7 +198,7 @@ def main():
                                        "ar-spam", "norm-diacritics", "dup-a", "dup-b",
                                        "nested-parent-comment", "nested-threat-ar-comment",
                                        "standalone-comment", "standalone-threat", "standalone-threat-ar",
-                                       "standalone-paragraph", "fb-comment-threat", "fb-comment-nested-child",
+                                       "standalone-paragraph", "fb-comment-nested-child",
                                        "harmful-parent-clean-reply", "testid-comment-prefix"]
                     for eid in expected_hidden:
                         got = hidden(eid)
@@ -216,6 +216,12 @@ def main():
                     # the quoting reply hides while its harmless parent stays.
                     check("quoted-insult-hidden-" + tag, "classification", True,
                           hidden("quoted-reply"))
+                    # Narrowed comment: only the matching body hides, while the
+                    # author/actions chrome of the same comment stays visible.
+                    check("comment-body-hidden-" + tag, "hide", True,
+                          page.locator("#fb-comment-threat > .comment-body.tathabbut-hidden").count() == 1)
+                    check("comment-chrome-visible-" + tag, "hide", False,
+                          hidden("fb-comment-threat"))
                     # Respectful post stays visible while its insulting comment hides alone.
                     check("respectful-post-visible-" + tag, "hide", False,
                           hidden("respectful-post"))

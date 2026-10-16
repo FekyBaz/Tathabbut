@@ -117,6 +117,97 @@ afterEach(() => {
   window.localStorage.clear();
 });
 
+describe("narrow hide targets (parent-container false positive)", () => {
+  it("leaves a single-block article on the unit itself", async () => {
+    document.body.innerHTML =
+      '<div id="feed"><div role="article" id="solo"><div class="post-body">You are an idiot</div></div></div>';
+    await loadContentModule();
+    const solo = byId("solo");
+    await vi.waitFor(() => expect(isHidden(solo)).toBe(true));
+    expect(revealButtons(solo)).toBe(1);
+  });
+
+  it("restores only the narrowed target on reveal", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="mixed-article">' +
+      '<div class="post-body">I respectfully disagree with your opinion.</div>' +
+      '<div class="plain-reply">You are an idiot</div>' +
+      "</div></div>";
+    await loadContentModule();
+    const article = byId("mixed-article");
+    const child = document.querySelector("#mixed-article .plain-reply") as HTMLElement;
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+    (child.querySelector(":scope > .tathabbut-reveal") as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(isHidden(child)).toBe(false));
+    expect(isHidden(article)).toBe(false);
+    expect(revealButtons(child)).toBe(0);
+  });
+
+  it("keeps one control on the narrowed target across churn", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="mixed-article">' +
+      '<div class="post-body">Great match today!</div>' +
+      '<div class="plain-reply">Shut up, you are pathetic</div>' +
+      "</div></div>";
+    await loadContentModule();
+    const child = document.querySelector("#mixed-article .plain-reply") as HTMLElement;
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+    const churn = document.createElement("div");
+    churn.id = "churn";
+    (document.getElementById("feed") as HTMLElement).appendChild(churn);
+    await settle();
+    expect(isHidden(child)).toBe(true);
+    expect(child.querySelectorAll(":scope > .tathabbut-reveal").length).toBe(1);
+  });
+
+  it("hides the whole unit when several children match", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="multi-match">' +
+      '<div class="c1">You are an idiot</div>' +
+      '<div class="c2">Shut up, you are pathetic</div>' +
+      "</div></div>";
+    await loadContentModule();
+    const article = byId("multi-match");
+    await vi.waitFor(() => expect(isHidden(article)).toBe(true));
+  });
+
+  it("keeps unit-level hiding for remote verdicts without a local match", async () => {
+    storedSettings = { ...DEFAULT_SETTINGS, apiUrl: "https://api.example.com" };
+    const chromeApi = (globalThis as unknown as { chrome: { runtime: { sendMessage: ReturnType<typeof vi.fn> } } }).chrome;
+    vi.mocked(chromeApi.runtime.sendMessage).mockResolvedValue({
+      ok: true,
+      result: { labels: [{ category: "spam", score: 0.99 }], provider: "remote-test" }
+    });
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="remote-mix">' +
+      '<div class="post-body">A quiet afternoon reading books.</div>' +
+      '<div class="plain-reply">More quiet pages to enjoy slowly.</div>' +
+      "</div></div>";
+    await loadContentModule();
+    const article = byId("remote-mix");
+    await vi.waitFor(() => expect(isHidden(article)).toBe(true));
+  });
+
+  it("hides only the harassing child, not the respectful article", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="mixed-article">' +
+      '<div class="post-body">I respectfully disagree with your opinion.</div>' +
+      '<div class="plain-reply">You are an idiot</div>' +
+      "</div></div>";
+    await loadContentModule();
+    const article = byId("mixed-article");
+    const child = document.querySelector("#mixed-article .plain-reply") as HTMLElement;
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+    expect(isHidden(article)).toBe(false);
+    expect(revealButtons(child)).toBe(1);
+  });
+});
+
 describe("content lifecycle on feed fixtures", () => {
   it("hides a matching post once and reveals it reversibly", async () => {
     document.body.innerHTML = fixture();

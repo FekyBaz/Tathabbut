@@ -20,6 +20,14 @@ interface ItemState {
   settingsVersion: number;
 }
 const itemStates = new WeakMap<Element, ItemState>();
+// Unit evaluated -> element actually hidden. Usually identical; differs
+// when a match is isolated to one child block (see narrowTarget).
+const hiddenTarget = new WeakMap<Element, Element>();
+
+// Block containers stable enough to carry a hide control. Inline elements
+// (span, a, …) are excluded: collapsing them is unreliable and a reveal
+// button inside running text corrupts readability.
+const CONTAINER_TAGS = new Set(["div", "p", "li", "blockquote", "section", "article"]);
 const queue = new BoundedTaskQueue(2, MAX_QUEUED_ITEMS);
 
 // Writes go out only when the meaningful fields change (updatedAt alone
@@ -204,14 +212,17 @@ function wrapDirectTextNodes(element: Element): void {
 }
 
 export function reveal(element: Element): void {
-  element.classList.remove(HIDDEN_CLASS);
-  element.removeAttribute("data-tathabbut-hidden");
-  element
+  const target = hiddenTarget.get(element) ?? element;
+  hiddenTarget.delete(element);
+  target.classList.remove(HIDDEN_CLASS);
+  target.removeAttribute("data-tathabbut-hidden");
+  target
     .querySelectorAll(":scope > .tathabbut-reveal, :scope > .tathabbut-notice")
     .forEach((control) => control.remove());
-  element.querySelectorAll(":scope > .tathabbut-hidden-text").forEach((wrapper) => {
+  target.querySelectorAll(":scope > .tathabbut-hidden-text").forEach((wrapper) => {
     wrapper.replaceWith(document.createTextNode(wrapper.textContent ?? ""));
   });
+
 }
 
 interface Decision {
@@ -247,6 +258,30 @@ function describeDecision(result: Classification): Decision {
   return { hidden: false, reason: "no-rule-match" };
 }
 
+/**
+ * Return the element that should actually be hidden for a unit-level
+ * hide decision: the single matching child block when the unit holds
+ * several sibling blocks and exactly one of them independently hides,
+ * otherwise the unit itself. Multi-match units, single-block units, and
+ * remote verdicts without a local explanation all keep unit-level hiding.
+ */
+function narrowTarget(element: Element): Element {
+  if (!shouldHide(classifyLocally(readText(element)), settings)) return element;
+  const kids = Array.from(element.children).filter(
+    (child): child is HTMLElement =>
+      child instanceof HTMLElement &&
+      CONTAINER_TAGS.has(child.tagName.toLowerCase()) &&
+      !child.matches(".tathabbut-reveal, .tathabbut-notice, .tathabbut-hidden-text") &&
+      !child.matches(ARTICLE_SELECTOR + ", " + COMMENT_SELECTOR)
+  );
+  if (kids.length < 2) return element;
+  const matching = kids.filter((child) => {
+    const text = readText(child);
+    return text !== "" && shouldHide(classifyLocally(text), settings);
+  });
+  return matching.length === 1 ? matching[0] : element;
+}
+
 export function applyResult(element: Element, result: Classification): void {
   const decision = describeDecision(result);
   const fingerprint = itemStates.get(element)?.fingerprint ?? "unknown";
@@ -264,12 +299,18 @@ export function applyResult(element: Element, result: Classification): void {
     debugLog("decision", details);
     return;
   }
-  if (element.getAttribute("data-tathabbut-hidden") === "true") return;
+  // Hide the tightest block that isolates the match instead of a broad
+  // ancestor: a harassing reply must not take respectful siblings with it.
+  // Single-block units keep unit-level hiding (no pointless reparenting).
+  // Nested comment/article units manage themselves and are never absorbed.
+  // Remote verdicts without a local explanation keep unit-level hiding.
+  const target = narrowTarget(element);
+  if (target.getAttribute("data-tathabbut-hidden") === "true") return;
   // Text-only blocks (for example a standalone <p>) need a wrapper so CSS can
   // blur their text without blurring the reveal control or hiding sibling content.
-  wrapDirectTextNodes(element);
-  element.classList.add(HIDDEN_CLASS);
-  element.setAttribute("data-tathabbut-hidden", "true");
+  wrapDirectTextNodes(target);
+  target.classList.add(HIDDEN_CLASS);
+  target.setAttribute("data-tathabbut-hidden", "true");
   const strings = t(settings.language);
   const notice = document.createElement("span");
   notice.className = "tathabbut-notice";
@@ -280,14 +321,16 @@ export function applyResult(element: Element, result: Classification): void {
   button.className = "tathabbut-reveal";
   button.textContent = strings.revealLabel;
   button.setAttribute("aria-label", strings.revealAria);
-  button.addEventListener("click", () => reveal(element), { once: true });
-  element.prepend(button);
-  element.prepend(notice);
+  button.addEventListener("click", () => reveal(target), { once: true });
+  target.prepend(button);
+  target.prepend(notice);
+  hiddenTarget.set(element, target);
   stats.hidden += 1;
   stats.lastReason = decision.reason;
   void persistStatus(true);
   debugLog("decision", {
     decision: "hidden",
+    narrowed: target !== element,
     reason: decision.reason,
     category: decision.category,
     score: decision.score,
