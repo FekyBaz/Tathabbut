@@ -1,0 +1,268 @@
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_SETTINGS } from "./policy";
+import { STATUS_KEY } from "./diagnostics";
+import popupHtml from "./popup.html?raw";
+
+function popupBodyHtml(): string {
+  const match = popupHtml.match(/<body>([\s\S]*)<\/body>/);
+  if (!match) throw new Error("popup.html has no body");
+  return match[1];
+}
+
+let storedSettings: unknown;
+let localStore: Record<string, unknown>;
+let localGetFails: boolean;
+
+function installPopupChromeStub(): void {
+  const sync = {
+    get: vi.fn(async (keys: unknown) => {
+      if (typeof keys === "string" && keys === "tathabbutSettings") {
+        return { tathabbutSettings: storedSettings };
+      }
+      return {};
+    }),
+    set: vi.fn(async () => undefined)
+  };
+  const local = {
+    get: vi.fn(async (keys: unknown) => {
+      if (localGetFails) throw new Error("storage unavailable");
+      const names = typeof keys === "string" ? [keys] : (keys as string[]);
+      const out: Record<string, unknown> = {};
+      for (const name of names ?? []) {
+        if (name in localStore) out[name] = localStore[name];
+      }
+      return out;
+    }),
+    set: vi.fn(async (items: Record<string, unknown>) => {
+      Object.assign(localStore, items);
+    })
+  };
+  const permissions = {
+    contains: vi.fn(async () => true),
+    request: vi.fn(async () => true),
+    remove: vi.fn(async () => undefined)
+  };
+  (globalThis as unknown as { chrome: unknown }).chrome = {
+    storage: { sync, local },
+    permissions
+  };
+}
+
+function freshSnapshot(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    startedAt: Date.now() - 1000,
+    settingsOk: true,
+    enabled: true,
+    threshold: 0.85,
+    categories: 4,
+    apiMode: "local",
+    articlesFound: 5,
+    evaluated: 5,
+    classified: 5,
+    hidden: 2,
+    skipped: 6,
+    skippedUnchanged: 5,
+    skippedEmpty: 1,
+    skippedDisabled: 0,
+    skippedQueueFull: 0,
+    lastReason: "rule-match",
+    origin: "www.facebook.com",
+    updatedAt: Date.now(),
+    ...overrides
+  };
+}
+
+function text(id: string): string {
+  const element = document.getElementById(id);
+  if (!element) throw new Error("missing popup element: " + id);
+  return element.textContent ?? "";
+}
+
+async function settle(milliseconds = 50): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+beforeEach(() => {
+  document.body.innerHTML = popupBodyHtml();
+  installPopupChromeStub();
+  storedSettings = { ...DEFAULT_SETTINGS };
+  localStore = {};
+  localGetFails = false;
+});
+
+afterEach(() => {
+  document.body.innerHTML = "";
+  vi.restoreAllMocks();
+});
+
+async function loadPopupModule() {
+  vi.resetModules();
+  await import("./popup");
+  await settle();
+}
+
+async function switchLanguage(value: "ar" | "en"): Promise<void> {
+  const select = document.getElementById("language") as HTMLSelectElement;
+  select.value = value;
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+  await settle(150);
+}
+
+describe("popup diagnostics panel", () => {
+  it("renders the stored status into the panel", async () => {
+    localStore[STATUS_KEY] = freshSnapshot();
+    await loadPopupModule();
+    await switchLanguage("en");
+    expect(text("st-source")).toBe("www.facebook.com");
+    expect(text("st-articles")).toBe("5");
+    expect(text("st-counts")).toBe("5 / 5 / 2 / 6");
+    expect(text("st-skips")).toBe("5 unchanged · 1 empty · 0 disabled · 0 queue-full");
+    expect(text("st-started")).toContain("Running since");
+    expect(text("st-settings")).toContain("threshold 0.85");
+  });
+
+  it("shows a readable error when status storage fails", async () => {
+    localGetFails = true;
+    await loadPopupModule();
+    await switchLanguage("en");
+    expect(text("st-started")).toContain("Could not read diagnostic storage");
+    expect(text("st-articles")).toBe("—");
+  });
+
+  it("reports a missing snapshot honestly", async () => {
+    await loadPopupModule();
+    await switchLanguage("en");
+    expect(text("st-started")).toContain("Not reported yet");
+  });
+
+  it("labels a stale snapshot as stale", async () => {
+    localStore[STATUS_KEY] = freshSnapshot({ updatedAt: Date.now() - 10 * 60_000 });
+    await loadPopupModule();
+    await switchLanguage("en");
+    expect(text("st-started")).toContain("stale");
+    expect(text("st-articles")).toBe("5");
+  });
+
+  it("persists the debug toggle to device-local storage", async () => {
+    await loadPopupModule();
+    const toggle = document.getElementById("debug") as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    await settle();
+    expect(localStore["tathabbutDebug"]).toBe(true);
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    await settle();
+    expect(localStore["tathabbutDebug"]).toBe(false);
+  });
+
+  it("refresh re-reads the panel", async () => {
+    localStore[STATUS_KEY] = freshSnapshot({ articlesFound: 5 });
+    await loadPopupModule();
+    expect(text("st-articles")).toBe("5");
+    localStore[STATUS_KEY] = freshSnapshot({ articlesFound: 9 });
+    (document.getElementById("refreshStatus") as HTMLButtonElement).click();
+    await settle();
+    expect(text("st-articles")).toBe("9");
+  });
+});
+
+describe("popup save flow", () => {
+  function mocks() {
+    const chromeApi = (globalThis as unknown as {
+      chrome: {
+        storage: { sync: { set: ReturnType<typeof vi.fn> } };
+        permissions: { request: ReturnType<typeof vi.fn> };
+      };
+    }).chrome;
+    return {
+      set: vi.mocked(chromeApi.storage.sync.set),
+      request: vi.mocked(chromeApi.permissions.request)
+    };
+  }
+
+  it("persists local-only settings including the threshold", async () => {
+    await loadPopupModule();
+    await switchLanguage("en");
+    (document.getElementById("threshold") as HTMLInputElement).value = "90";
+    (document.getElementById("save") as HTMLButtonElement).click();
+    await settle(150);
+    const { set, request } = mocks();
+    expect(set).toHaveBeenCalledWith({
+      tathabbutSettings: {
+        enabled: true,
+        enabledCategories: ["harassment", "hate", "threats", "spam"],
+        threshold: 0.9,
+        apiUrl: "",
+        language: "en"
+      }
+    });
+    expect(request).not.toHaveBeenCalled();
+    expect(text("status")).toContain("Local-only");
+  });
+
+  it("rejects an invalid API URL without saving", async () => {
+    await loadPopupModule();
+    (document.getElementById("apiUrl") as HTMLInputElement).value = "http://api.example.com";
+    // Default language is Arabic: the localized HTTPS error still names the scheme.
+    (document.getElementById("save") as HTMLButtonElement).click();
+    await settle(150);
+    const { set } = mocks();
+    expect(set).not.toHaveBeenCalled();
+    expect(text("status")).toContain("HTTPS");
+  });
+});
+
+describe("popup language", () => {
+  function syncSet() {
+    const chromeApi = (globalThis as unknown as {
+      chrome: { storage: { sync: { set: ReturnType<typeof vi.fn> } } };
+    }).chrome;
+    return vi.mocked(chromeApi.storage.sync.set);
+  }
+
+  it("defaults to Arabic with RTL for fresh installs", async () => {
+    await loadPopupModule();
+    expect(document.documentElement.dir).toBe("rtl");
+    expect(document.documentElement.lang).toBe("ar");
+    expect(document.title).toBe("إعدادات تثبّت");
+    expect(text("save")).toBe("حفظ الإعدادات");
+    expect(text("thresholdLabel")).toContain("عتبة الثقة");
+    expect(text("st-started")).toContain("لا يوجد تقرير");
+  });
+
+  it("falls back to Arabic for invalid stored values", async () => {
+    storedSettings = { ...DEFAULT_SETTINGS, language: "xx" };
+    await loadPopupModule();
+    expect(document.documentElement.dir).toBe("rtl");
+    expect(text("save")).toBe("حفظ الإعدادات");
+  });
+
+  it("switches to English, persists it, and flips direction", async () => {
+    localStore[STATUS_KEY] = freshSnapshot();
+    await loadPopupModule();
+    await switchLanguage("en");
+    expect(document.documentElement.dir).toBe("ltr");
+    expect(document.documentElement.lang).toBe("en");
+    expect(text("save")).toBe("Save settings");
+    expect(text("st-started")).toContain("Running since");
+    expect(syncSet()).toHaveBeenCalledWith(
+      expect.objectContaining({ tathabbutSettings: expect.objectContaining({ language: "en" }) })
+    );
+  });
+
+  it("keeps the language choice when saving other settings", async () => {
+    await loadPopupModule();
+    await switchLanguage("en");
+    (document.getElementById("save") as HTMLButtonElement).click();
+    await settle(150);
+    expect(syncSet()).toHaveBeenCalledWith(
+      expect.objectContaining({ tathabbutSettings: expect.objectContaining({ language: "en" }) })
+    );
+    expect(syncSet()).toHaveBeenCalledWith(
+      expect.objectContaining({ tathabbutSettings: expect.objectContaining({ threshold: 0.85 }) })
+    );
+  });
+});

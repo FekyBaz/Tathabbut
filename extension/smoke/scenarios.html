@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8" /><title>Tathabbut lab feed</title></head>
+<body>
+<div role="dialog" aria-label="Post comments" id="fb-comment-modal">
+  <div id="fb-comments-container" data-testid="comments">
+  <div id="fb-comment-respect" data-testid="comment">
+    <span class="author">Author</span>
+    <div class="comment-body"><span>I respectfully disagree with your opinion.</span></div>
+    <div class="comment-actions"><button type="button">Reply</button></div>
+  </div>
+  <div id="fb-comment-threat" data-testid="comment">
+    <span class="author">Author</span>
+    <div class="comment-body"><span>سوف اقتلك</span></div>
+    <div class="comment-actions"><button type="button">Reply</button></div>
+  </div>
+  <div id="fb-comment-thread" data-testid="comment">
+    <span class="author">Author</span>
+    <div class="comment-body"><span>Thanks for sharing your view.</span></div>
+    <div id="fb-comment-nested-child" data-testid="comment">
+      <span class="author">Reply author</span>
+      <div class="comment-body"><span>You are a loser</span></div>
+    </div>
+  </div>
+  </div>
+</div>
+<div id="feed">
+  <div role="article" id="en-harass"><div class="body">You are an idiot</div></div>
+  <div role="article" id="ar-harass"><div class="body">انت غبي</div></div>
+  <div role="article" id="en-threat"><div class="body">I will kill you</div></div>
+  <div role="article" id="en-spam"><div class="body">Claim your prize now, DM me to claim</div></div>
+  <div role="article" id="ar-spam"><div class="body">مبروك كسبت الجائزة</div></div>
+  <div role="article" id="ar-belittle"><div class="body">انت مالكش لازمه</div></div>
+  <div role="article" id="neutral-en"><div class="body">I love sunny days and long walks.</div></div>
+  <div role="article" id="respect-en"><div class="body">I disagree with this policy and think it should change.</div></div>
+  <div role="article" id="respect-ar"><div class="body">أنا مختلف مع القرار وأعتقد أنه يحتاج إلى تغيير.</div></div>
+  <div role="article" id="empty-article"><div class="body">    </div></div>
+  <div role="article" id="long-mixed"><div class="body">Today was a quiet day at the market. كان اليوم هادئا في السوق واشتريت بعض الخضار والفواكه الطازجة. The weather stayed pleasant all afternoon and the streets were calm and friendly.</div></div>
+  <div role="article" id="norm-diacritics"><div class="body">إنتَ غَبِي</div></div>
+  <div role="article" id="dup-a"><div class="body">You're a loser</div></div>
+  <div role="article" id="dup-b"><div class="body">You're a loser</div></div>
+  <div role="article" id="nested-parent"><div class="body">Great match today!</div><div class="comment" id="nested-parent-comment"><span>You are a loser</span></div></div>
+  <div role="article" id="harmful-parent-clean-reply"><div class="body">You are an idiot</div><div class="comment" id="clean-reply-inside-harmful-parent"><span>Thanks for explaining your point respectfully.</span></div></div>
+  <div data-testid="comment-123" id="testid-comment-prefix"><span>You are a loser</span></div>
+  <div class="comment" id="standalone-comment"><span>Shut up, you are pathetic</span></div>
+  <div class="comment" id="standalone-threat"><span>I will kill you</span></div>
+  <div class="comment" id="standalone-threat-ar"><span>سوف اقتلك</span></div>
+  <p id="standalone-paragraph">You are an idiot</p>
+  <div role="article" id="nested-threat-ar"><div class="body">مباراة رائعة اليوم!</div><div class="comment" id="nested-threat-ar-comment"><span>سوف أقتلك</span></div></div>
+  <div role="article" id="spam-benign"><div class="body">I sent you a DM about the meeting time.</div></div>
+  <div role="article" id="editable"><div class="body">What a wonderful morning for a walk in the park.</div></div>
+  <div role="article" id="sibling-clean"><div class="body">A quiet afternoon reading books.</div><div class="comment"><span>Thanks for sharing this recipe!</span></div></div>
+  <div role="article" id="counter-article"><div class="body">الشتيمة مش حل، خلينا نتناقش باحترام.</div></div>
+  <div role="article" id="respectful-post"><div class="body">أنا مختلف معاك في الرأي، خلينا نتناقش بهدوء.</div><div class="comment" id="respectful-post-insult"><span>انت غبي</span></div></div>
+  <div role="article" id="quote-parent"><div class="body">What do you think about this discussion?</div><div class="comment" id="quoted-reply"><span>He said you are an idiot yesterday</span></div></div>
+  <div role="article" id="tall-harass"><div class="body">I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. I love sunny days and long walks. You are an idiot.</div></div>
+</div>
+</body>
+</html>

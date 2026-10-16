@@ -4,10 +4,15 @@
   "version": "0.1.0",
   "description": "A reversible, user-controlled text filter for social feeds.",
   "permissions": ["storage"],
-  "host_permissions": ["https://www.facebook.com/*"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "host_permissions": ["https://*.facebook.com/*", "https://facebook.com/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "content_scripts": [
     {
-      "matches": ["https://www.facebook.com/*"],
+      "matches": ["https://*.facebook.com/*", "https://facebook.com/*"],
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
@@ -16,11 +21,5 @@
   "action": {
     "default_title": "Tathabbut settings",
     "default_popup": "popup.html"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["chunks/*"],
-      "matches": ["https://www.facebook.com/*"]
-    }
-  ]
+  }
 }

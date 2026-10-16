@@ -9,6 +9,10 @@ If the user configures an API URL, the extension can send the text snippet and s
 - Chrome Manifest V3 and TypeScript.
 - Reads visible text from candidate feed units.
 - Hides a candidate using a reversible CSS class; never deletes page content.
+- When a unit holds several sibling blocks and exactly one of them independently
+  triggers a hide, only that block is hidden (narrow target); single-block
+  units, multi-match units, and remote verdicts without a local explanation
+  keep unit-level hiding. Reveal always restores exactly the hidden target.
 - Stores preferences in Chrome storage.
 - Does not read private messages, passwords, cookies, or tokens.
 - Uses a MutationObserver for newly inserted feed items.

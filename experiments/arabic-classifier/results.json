@@ -1,0 +1,209 @@
+{
+ "model": {
+  "id": "IbrahimAmin/marbertv2-finetuned-egyptian-hate-speech-classification",
+  "revision": "a641e0cd9c49474ade0bf5e7e65c43cbcb2f00e2",
+  "transformers": "4.47.1",
+  "torch": "2.5.1+cpu",
+  "device": "cpu",
+  "threads": 1,
+  "metrics": {
+   "n": 37,
+   "tp": 15,
+   "fp": 0,
+   "tn": 16,
+   "fn": 6,
+   "errors": 0,
+   "precision": 1.0,
+   "recall": 0.7143,
+   "f1": 0.8333,
+   "falsePositiveRateRespectful": 0.0,
+   "falseNegativeRateHarmful": 0.2857,
+   "perCategory": {
+    "insult": {
+     "tp": 8,
+     "fp": 0,
+     "tn": 0,
+     "fn": 0
+    },
+    "mockery": {
+     "tp": 1,
+     "fp": 0,
+     "tn": 0,
+     "fn": 3
+    },
+    "belittling": {
+     "tp": 3,
+     "fp": 0,
+     "tn": 0,
+     "fn": 1
+    },
+    "threat": {
+     "tp": 3,
+     "fp": 0,
+     "tn": 0,
+     "fn": 0
+    },
+    "spam": {
+     "tp": 0,
+     "fp": 0,
+     "tn": 0,
+     "fn": 2
+    },
+    "respectful": {
+     "tp": 0,
+     "fp": 0,
+     "tn": 10,
+     "fn": 0
+    },
+    "neutral": {
+     "tp": 0,
+     "fp": 0,
+     "tn": 6,
+     "fn": 0
+    }
+   }
+  },
+  "avgLatencyMs": 45.906,
+  "coldLoadMs": 8509.2,
+  "artifactBytes": 655203376,
+  "peakRssDeltaBytes": 974143488,
+  "errors": []
+ },
+ "dataset": {
+  "path": "experiments/arabic-classifier/dataset.json",
+  "version": "0.1.0",
+  "scored": 37,
+  "ambiguousExcluded": 7
+ },
+ "rulesBaseline": {
+  "metrics": {
+   "n": 37,
+   "tp": 21,
+   "fp": 0,
+   "tn": 16,
+   "fn": 0,
+   "errors": 0,
+   "precision": 1.0,
+   "recall": 1.0,
+   "f1": 1.0,
+   "falsePositiveRateRespectful": 0.0,
+   "falseNegativeRateHarmful": 0.0,
+   "perCategory": {
+    "insult": {
+     "tp": 8,
+     "fp": 0,
+     "tn": 0,
+     "fn": 0
+    },
+    "mockery": {
+     "tp": 4,
+     "fp": 0,
+     "tn": 0,
+     "fn": 0
+    },
+    "belittling": {
+     "tp": 4,
+     "fp": 0,
+     "tn": 0,
+     "fn": 0
+    },
+    "threat": {
+     "tp": 3,
+     "fp": 0,
+     "tn": 0,
+     "fn": 0
+    },
+    "spam": {
+     "tp": 2,
+     "fp": 0,
+     "tn": 0,
+     "fn": 0
+    },
+    "respectful": {
+     "tp": 0,
+     "fp": 0,
+     "tn": 10,
+     "fn": 0
+    },
+    "neutral": {
+     "tp": 0,
+     "fp": 0,
+     "tn": 6,
+     "fn": 0
+    }
+   }
+  },
+  "avgLatencyMs": 0.039,
+  "totalWallMs": 1.7
+ },
+ "ambiguousItems": [
+  {
+   "id": "amb-01",
+   "note": "amusement vs mockery needs context",
+   "rules": "harmless",
+   "model": "harmless",
+   "modelLabel": [
+    "Neutral"
+   ]
+  },
+  {
+   "id": "amb-02",
+   "note": "teasing vs shaming needs context",
+   "rules": "harmless",
+   "model": "harmful",
+   "modelLabel": [
+    "Offensive"
+   ]
+  },
+  {
+   "id": "amb-03",
+   "note": "reporting another person's insult, not endorsing",
+   "rules": "harmful",
+   "model": "harmful",
+   "modelLabel": [
+    "Offensive"
+   ]
+  },
+  {
+   "id": "amb-04",
+   "note": "counterspeech mentions a slur pattern",
+   "rules": "harmless",
+   "model": "harmful",
+   "modelLabel": [
+    "Offensive"
+   ]
+  },
+  {
+   "id": "amb-05",
+   "note": "shouty promo, deliberately uncovered by starter rules",
+   "rules": "harmless",
+   "model": "harmless",
+   "modelLabel": [
+    "Neutral"
+   ]
+  },
+  {
+   "id": "amb-06",
+   "note": "heated but about an idea, not a person",
+   "rules": "harmless",
+   "model": "harmless",
+   "modelLabel": [
+    "Neutral"
+   ]
+  },
+  {
+   "id": "amb-07",
+   "note": "genuinely insulting intent but Latin transliteration; uncovered by design",
+   "rules": "harmless",
+   "model": "harmless",
+   "modelLabel": [
+    "Neutral"
+   ]
+  }
+ ],
+ "limitations": [
+  "Synthetic set (n=37 scored); not real-world traffic.",
+  "Model labels mapped binary; bullying/mockery/threat distinctions unavailable.",
+  "Single CPU thread, batch size 1; no GPU timing."
+ ]
+}
