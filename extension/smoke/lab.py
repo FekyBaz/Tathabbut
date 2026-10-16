@@ -216,6 +216,11 @@ def main():
                     # the quoting reply hides while its harmless parent stays.
                     check("quoted-insult-hidden-" + tag, "classification", True,
                           hidden("quoted-reply"))
+                    # Respectful post stays visible while its insulting comment hides alone.
+                    check("respectful-post-visible-" + tag, "hide", False,
+                          hidden("respectful-post"))
+                    check("respectful-post-insult-hidden-" + tag, "classification", True,
+                          hidden("respectful-post-insult"))
 
                     check("comments-container-visible-" + tag, "hide", False,
                           hidden("fb-comments-container"))
@@ -588,6 +593,29 @@ def main():
                 except Exception:
                     check("recover-populated-feed", "dynamic", True, False)
                 recover_page.close()
+
+                # English notice: switch language, reload, verify English strings, restore.
+                sw.evaluate(
+                    "chrome.storage.sync.get('tathabbutSettings').then(s => "
+                    "chrome.storage.sync.set({tathabbutSettings: {...s.tathabbutSettings, language: 'en'}}))"
+                )
+                en_page = ctx.new_page()
+                en_page.route(
+                    "https://*.facebook.com/*",
+                    lambda route: route.fulfill(body=served["html"], content_type="text/html"),
+                )
+                en_page.goto("https://www.facebook.com/", wait_until="domcontentloaded")
+                try:
+                    en_page.wait_for_selector("#en-harass.tathabbut-hidden", timeout=15000)
+                    en_button = (en_page.locator("#en-harass > .tathabbut-reveal").text_content() or "").strip()
+                    check("notice-english-" + tag, "hide", True, en_button == "Reveal content", en_button)
+                except Exception:
+                    check("notice-english-" + tag, "hide", True, False)
+                sw.evaluate(
+                    "chrome.storage.sync.get('tathabbutSettings').then(s => "
+                    "chrome.storage.sync.set({tathabbutSettings: {...s.tathabbutSettings, language: 'ar'}}))"
+                )
+                en_page.close()
 
                 popup = ctx.new_page()
                 popup.goto("chrome-extension://" + extension_id + "/popup.html")

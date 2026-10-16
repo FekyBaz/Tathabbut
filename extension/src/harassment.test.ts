@@ -86,7 +86,10 @@ describe("belittling and humiliation", () => {
     "انت آخر واحد يتكلم",
     "انت متفهمش حاجه",
     "انت متفهمش حاجة",
-    "كلامك يضحك"
+    "كلامك يضحك",
+    "ملكش لازمة",
+    "ملكش لازمه",
+    "ملكش لازمة!"
   ])("hides a targeted put-down: %s", (text) => {
     expect(isHarassment(text)).toBe(true);
     expect(hides(text)).toBe(true);

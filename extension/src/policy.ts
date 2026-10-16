@@ -55,7 +55,7 @@ const patterns: Record<Category, RegExp[]> = {
     /(?:عبقري\s+زمانك|عالم\s+زمانك|يا\s+سلام\s+علي\s+(?:الفهم|الذكاء)|ما\s+شاء\s+الله\s+علي\s+(?:الفهم|الذكاء)|فاهمه?\s+اوي|فاكر\s+نفسك\s+مين)/u,
     // Targeted belittling: possessive or second-person dismissal phrases.
     // Each alternative is a complete multi-word phrase, never a lone word.
-    /(?:انت\s+مالكش\s+لازم[هة]?|محدش\s+بياخد\s+بكلامك|انت\s+اخر\s+واحد\s+يتكلم|انت\s+متفهمش\s+حاج[هة]?|كلامك\s+يضحك)/u
+    /(?:(?:انت\s+)?(?:مالكش|ملكش)\s+لازم[هة]?|محدش\s+بياخد\s+بكلامك|انت\s+اخر\s+واحد\s+يتكلم|انت\s+متفهمش\s+حاج[هة]?|كلامك\s+يضحك)/u
   ],
   hate: [
     /\b(?:all|every) (?:members of )?(?:group) are (?:vermin|subhuman)\b/i

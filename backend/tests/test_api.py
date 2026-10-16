@@ -272,3 +272,12 @@ def test_english_spam_parity() -> None:
     )
     assert response.status_code == 200
     assert response.json()["labels"][0]["category"] == "spam"
+
+
+def test_bare_malaksh_parity() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "ملكش لازمة", "enabled_categories": ["harassment"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "harassment"

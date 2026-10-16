@@ -96,6 +96,7 @@ Expected starter-rule outcomes (current narrow rules, by design):
   (matches no starter spam rule; shouty promo text is deliberately not
   covered to avoid punishing ordinary posts).
 - `I respectfully disagree with your opinion.` → stays visible.
+- `ملكش لازمة` → hidden (bare Egyptian put-down, no pronoun needed).
 
 Then, in order: add one more matching comment while the page is open
 (dynamic insert), edit one hidden comment to neutral text and confirm it
