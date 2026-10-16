@@ -135,6 +135,26 @@ describe("neutral discussion stays visible", () => {
   });
 });
 
+describe("hateful or dehumanizing attacks", () => {
+  // Annotation rule: a dehumanizing attack targets a protected group or
+  // community as vermin/subhuman. Criticism of a group's ideas, policies,
+  // or actions is NOT hate under this rule, no matter how heated.
+  it.each(["All group are vermin", "Every group are subhuman"])(
+    "flags a dehumanizing group attack: %s",
+    (text) => {
+      expect(classifyLocally(text).labels.map((l) => l.category)).toContain("hate");
+      expect(hides(text)).toBe(true);
+    }
+  );
+
+  it.each([
+    "I disagree with this group's policy and voted against it.",
+    "This ideology deserves strong criticism.",
+  ])("leaves criticism of ideas and policies visible: %s", (text) => {
+    expect(classifyLocally(text).labels).toEqual([]);
+  });
+});
+
 describe("harassment normalization variants", () => {
   it.each([
     "  انت غبي  ",
@@ -145,6 +165,31 @@ describe("harassment normalization variants", () => {
     "انت\u200B غبي"
   ])("matches through spacing, punctuation, and invisible marks: %s", (text) => {
     expect(isHarassment(text)).toBe(true);
+  });
+});
+
+describe("english spam", () => {
+  it("flags prize and profit spam", () => {
+    const result = classifyLocally("Claim your prize now, DM me to claim");
+    expect(result.labels.map((l) => l.category)).toContain("spam");
+    expect(hides(result && "Claim your prize now, DM me to claim")).toBe(true);
+  });
+
+  it.each(["New blog post about healthy cooking recipes", "Meeting moved to 3pm, see you there"])(
+    "leaves benign promotion and logistics visible: %s",
+    (text) => {
+      expect(classifyLocally(text).labels).toEqual([]);
+    }
+  );
+});
+
+describe("counterspeech stays visible", () => {
+  it.each([
+    "الشتيمة مش حل، خلينا نتناقش باحترام.",
+    "This argument needs stronger evidence.",
+  ])("does not flag counterspeech or evidence requests: %s", (text) => {
+    expect(classifyLocally(text).labels).toEqual([]);
+    expect(hides(text)).toBe(false);
   });
 });
 

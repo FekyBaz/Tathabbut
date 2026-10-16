@@ -245,3 +245,30 @@ def test_parity_abstract_failure_stays() -> None:
     )
     assert response.status_code == 200
     assert response.json()["labels"] == []
+
+
+def test_hate_positive_parity() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "All group are vermin", "enabled_categories": ["hate"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "hate"
+
+
+def test_group_policy_criticism_is_not_hate() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "I disagree with this group's policy and voted against it.", "enabled_categories": ["hate"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"] == []
+
+
+def test_english_spam_parity() -> None:
+    response = client.post(
+        "/v1/classify",
+        json={"text": "Claim your prize now, DM me to claim", "enabled_categories": ["spam"]},
+    )
+    assert response.status_code == 200
+    assert response.json()["labels"][0]["category"] == "spam"

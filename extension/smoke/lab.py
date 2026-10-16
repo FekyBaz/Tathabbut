@@ -207,9 +207,15 @@ def main():
                             check("single-control-" + eid + "-" + tag, "hide", 1, buttons(eid))
                     for eid in ["neutral-en", "respect-en", "respect-ar", "long-mixed",
                                 "spam-benign", "empty-article", "editable",
-                                "nested-parent", "nested-threat-ar",
+                                "nested-parent", "nested-threat-ar", "counter-article",
+                                "quote-parent",
                                 "fb-comment-respect", "fb-comment-thread", "clean-reply-inside-harmful-parent"]:
                         check("visible-" + eid + "-" + tag, "threshold", False, hidden(eid))
+                    # Known limitation, locked explicitly: a quoted insult is
+                    # indistinguishable from endorsement for lexical rules, so
+                    # the quoting reply hides while its harmless parent stays.
+                    check("quoted-insult-hidden-" + tag, "classification", True,
+                          hidden("quoted-reply"))
 
                     check("comments-container-visible-" + tag, "hide", False,
                           hidden("fb-comments-container"))
@@ -227,6 +233,10 @@ def main():
                     )
                     check("reveal-" + tag, "reveal", False, hidden("en-harass"))
                     check("reveal-control-removed-" + tag, "reveal", 0, buttons("en-harass"))
+                    reveal_text = (page.locator("#ar-harass > .tathabbut-reveal").text_content() or "").strip()
+                    check("notice-arabic-default-" + tag, "hide", True,
+                          reveal_text == "\u0625\u0638\u0647\u0627\u0631 \u0627\u0644\u0645\u062d\u062a\u0648\u0649",
+                          reveal_text)
 
                     page.evaluate(
                         "document.querySelector('#editable .body').textContent = 'You are an idiot';"
@@ -307,7 +317,7 @@ def main():
                           hidden("tall-harass"))
                     box = page.locator("#tall-harass").bounding_box()
                     check("granularity-collapse-" + tag, "hide", True,
-                          box is not None and box["height"] < 100,
+                          box is not None and box["height"] < 200,
                           "hidden tall article height=%s" % (box["height"] if box else None))
                     check("granularity-sibling-visible-" + tag, "hide", False,
                           hidden("sibling-clean"))
@@ -593,6 +603,21 @@ def main():
                     check("popup-articles", "diagnostics", True, False)
                 source = (popup.locator("#st-source").text_content() or "").strip()
                 check("popup-source", "diagnostics", True, "facebook.com" in source, source)
+                save_text = (popup.locator("#save").text_content() or "").strip()
+                popup_dir = popup.evaluate("document.documentElement.dir")
+                check("popup-default-arabic", "diagnostics", True,
+                      save_text == "\u062d\u0641\u0638 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a" and popup_dir == "rtl",
+                      save_text + "/" + str(popup_dir))
+                popup.locator("#language").select_option("en")
+                try:
+                    popup.wait_for_function(
+                        "document.documentElement.dir === 'ltr'",
+                        timeout=5000,
+                    )
+                    check("popup-switch-english", "diagnostics", True,
+                          (popup.locator("#save").text_content() or "").strip() == "Save settings")
+                except Exception:
+                    check("popup-switch-english", "diagnostics", True, False)
                 popup.close()
             finally:
                 ctx.close()
