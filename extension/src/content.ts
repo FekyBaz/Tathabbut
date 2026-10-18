@@ -23,6 +23,16 @@ const itemStates = new WeakMap<Element, ItemState>();
 // Unit evaluated -> element actually hidden. Usually identical; differs
 // when a match is isolated to one child block (see narrowTarget).
 const hiddenTarget = new WeakMap<Element, Element>();
+// Reverse mapping lets reveal controls and settings refreshes clean up the
+// exact owner/target pair, including when the target is a narrowed child.
+const hiddenOwner = new WeakMap<Element, Element>();
+interface ManualRevealState {
+  fingerprint: string;
+  settingsVersion: number;
+}
+// A user reveal survives incidental mutations outside the actual hidden target.
+// It expires when that target's text or the current settings version changes.
+const manualReveals = new WeakMap<Element, ManualRevealState>();
 
 // Block containers stable enough to carry a hide control. Inline elements
 // (span, a, …) are excluded: collapsing them is unreliable and a reveal
@@ -211,9 +221,7 @@ function wrapDirectTextNodes(element: Element): void {
   }
 }
 
-export function reveal(element: Element): void {
-  const target = hiddenTarget.get(element) ?? element;
-  hiddenTarget.delete(element);
+function clearHiddenPresentation(target: Element): void {
   target.classList.remove(HIDDEN_CLASS);
   target.removeAttribute("data-tathabbut-hidden");
   target
@@ -222,7 +230,30 @@ export function reveal(element: Element): void {
   target.querySelectorAll(":scope > .tathabbut-hidden-text").forEach((wrapper) => {
     wrapper.replaceWith(document.createTextNode(wrapper.textContent ?? ""));
   });
+}
 
+function releaseHiddenTarget(owner: Element, target: Element, userInitiated: boolean): void {
+  if (userInitiated) {
+    manualReveals.set(target, {
+      fingerprint: fingerprintText(readText(target)),
+      settingsVersion
+    });
+  }
+  hiddenTarget.delete(owner);
+  if (hiddenOwner.get(target) === owner) hiddenOwner.delete(target);
+  clearHiddenPresentation(target);
+}
+
+export function reveal(element: Element): void {
+  // Prefer the forward mapping when the caller passes the evaluated unit;
+  // otherwise resolve a narrowed target back to its owner.
+  const owner = hiddenTarget.has(element) ? element : (hiddenOwner.get(element) ?? element);
+  const target = hiddenTarget.get(owner) ?? element;
+  releaseHiddenTarget(owner, target, false);
+}
+
+function revealFromButton(owner: Element, target: Element): void {
+  releaseHiddenTarget(owner, target, true);
 }
 
 interface Decision {
@@ -305,6 +336,24 @@ export function applyResult(element: Element, result: Classification): void {
   // Nested comment/article units manage themselves and are never absorbed.
   // Remote verdicts without a local explanation keep unit-level hiding.
   const target = narrowTarget(element);
+  const manualReveal = manualReveals.get(target);
+  if (manualReveal !== undefined) {
+    const currentTargetFingerprint = fingerprintText(readText(target));
+    if (manualReveal.settingsVersion === settingsVersion &&
+        manualReveal.fingerprint === currentTargetFingerprint) {
+      stats.lastReason = "user-revealed";
+      void persistStatus(false);
+      debugLog("decision", {
+        decision: "shown",
+        reason: "user-revealed",
+        fingerprint,
+        narrowed: target !== element
+      });
+      return;
+    }
+    // The user changed the target text or policy settings changed; reconsider it.
+    manualReveals.delete(target);
+  }
   if (target.getAttribute("data-tathabbut-hidden") === "true") return;
   // Text-only blocks (for example a standalone <p>) need a wrapper so CSS can
   // blur their text without blurring the reveal control or hiding sibling content.
@@ -321,10 +370,11 @@ export function applyResult(element: Element, result: Classification): void {
   button.className = "tathabbut-reveal";
   button.textContent = strings.revealLabel;
   button.setAttribute("aria-label", strings.revealAria);
-  button.addEventListener("click", () => reveal(target), { once: true });
+  button.addEventListener("click", () => revealFromButton(element, target), { once: true });
   target.prepend(button);
   target.prepend(notice);
   hiddenTarget.set(element, target);
+  hiddenOwner.set(target, element);
   stats.hidden += 1;
   stats.lastReason = decision.reason;
   void persistStatus(true);
