@@ -64,6 +64,10 @@ function installChromeStub(): void {
   const onChanged = {
     addListener: vi.fn((listener: (changes: Record<string, unknown>, area: string) => void) => {
       changeListeners.push(listener);
+    }),
+    removeListener: vi.fn((listener: (changes: Record<string, unknown>, area: string) => void) => {
+      const index = changeListeners.indexOf(listener);
+      if (index >= 0) changeListeners.splice(index, 1);
     })
   };
   const runtime = { sendMessage: vi.fn(async () => undefined) };
@@ -77,9 +81,19 @@ function fireStorageChange(area = "sync", changes: Record<string, unknown> = { [
   for (const listener of changeListeners) listener(changes, area);
 }
 
-async function loadContentModule() {
+let activeContent: typeof import("./content") | undefined;
+
+function disposeActiveContent(): void {
+  activeContent?.dispose();
+  activeContent = undefined;
+}
+
+async function loadContentModule(): Promise<typeof import("./content")> {
+  disposeActiveContent();
   vi.resetModules();
-  return import("./content");
+  const module = await import("./content");
+  activeContent = module;
+  return module;
 }
 
 function byId(id: string): HTMLElement {
@@ -104,6 +118,7 @@ async function settle(milliseconds = 150): Promise<void> {
 }
 
 beforeEach(() => {
+  disposeActiveContent();
   document.body.innerHTML = "";
   window.localStorage.clear();
   installChromeStub();
@@ -113,6 +128,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  disposeActiveContent();
   document.body.innerHTML = "";
   window.localStorage.clear();
 });
@@ -142,6 +158,71 @@ describe("narrow hide targets (parent-container false positive)", () => {
     await vi.waitFor(() => expect(isHidden(child)).toBe(false));
     expect(isHidden(article)).toBe(false);
     expect(revealButtons(child)).toBe(0);
+  });
+
+  it("keeps an explicitly revealed narrowed reply visible when sibling metadata changes", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="mixed-article">' +
+      '<div class="post-body">I respectfully disagree with your opinion.</div>' +
+      '<div class="plain-reply">You are an idiot</div>' +
+      '</div></div>';
+    await loadContentModule();
+    const article = byId("mixed-article");
+    const child = document.querySelector("#mixed-article .plain-reply") as HTMLElement;
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+
+    (child.querySelector(":scope > .tathabbut-reveal") as HTMLButtonElement).click();
+    expect(isHidden(child)).toBe(false);
+
+    const timestamp = document.createElement("span");
+    timestamp.id = "sibling-metadata";
+    timestamp.textContent = " · 2 min";
+    article.appendChild(timestamp);
+    await settle();
+
+    expect(isHidden(child)).toBe(false);
+    expect(revealButtons(child)).toBe(0);
+    expect(child.querySelector(":scope > .tathabbut-notice")).toBeNull();
+  });
+
+  it("reclassifies a narrowed reply when its own text changes after reveal", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="mixed-article">' +
+      '<div class="post-body">I respectfully disagree with your opinion.</div>' +
+      '<div class="plain-reply">You are an idiot</div>' +
+      '</div></div>';
+    await loadContentModule();
+    const child = document.querySelector("#mixed-article .plain-reply") as HTMLElement;
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+
+    (child.querySelector(":scope > .tathabbut-reveal") as HTMLButtonElement).click();
+    child.textContent = "Shut up, you are pathetic";
+
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+    expect(revealButtons(child)).toBe(1);
+  });
+
+  it("invalidates a manual reveal when filtering settings are reloaded", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="mixed-article">' +
+      '<div class="post-body">I respectfully disagree with your opinion.</div>' +
+      '<div class="plain-reply">You are an idiot</div>' +
+      '</div></div>';
+    await loadContentModule();
+    const child = document.querySelector("#mixed-article .plain-reply") as HTMLElement;
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+
+    (child.querySelector(":scope > .tathabbut-reveal") as HTMLButtonElement).click();
+    expect(isHidden(child)).toBe(false);
+
+    storedSettings = { ...DEFAULT_SETTINGS, language: "en" };
+    fireStorageChange();
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+    expect((child.querySelector(":scope > .tathabbut-reveal") as HTMLButtonElement).textContent)
+      .toBe("Reveal content");
   });
 
   it("keeps one control on the narrowed target across churn", async () => {
@@ -498,5 +579,180 @@ describe("content lifecycle on feed fixtures", () => {
     } finally {
       spy.mockRestore();
     }
+  });
+});
+
+describe("content module lifecycle ownership", () => {
+  it("dispose unregisters the storage listener and stops mutating the DOM", async () => {
+    document.body.innerHTML = fixture();
+    const module = await loadContentModule();
+    const post = byId(MATCHING_POST);
+    await vi.waitFor(() => expect(isHidden(post)).toBe(true));
+    expect(changeListeners.length).toBe(1);
+
+    module.dispose();
+    expect(changeListeners.length).toBe(0);
+
+    const late = document.createElement("div");
+    late.setAttribute("role", "article");
+    late.id = "post-after-dispose";
+    late.textContent = "You are an idiot";
+    (document.getElementById("feed") as HTMLElement).appendChild(late);
+    await settle();
+
+    expect(isHidden(late)).toBe(false);
+    expect(revealButtons(late)).toBe(0);
+  });
+
+  it("a disposed instance ignores later storage changes", async () => {
+    document.body.innerHTML = fixture();
+    const module = await loadContentModule();
+    const post = byId(MATCHING_POST);
+    await vi.waitFor(() => expect(isHidden(post)).toBe(true));
+
+    module.dispose();
+    storedSettings = { ...DEFAULT_SETTINGS, language: "en" };
+    fireStorageChange();
+    await settle();
+
+    const button = post.querySelector(".tathabbut-reveal") as HTMLButtonElement;
+    expect(button.textContent).toBe("إظهار المحتوى");
+  });
+
+  it("re-importing the module leaves only the newest instance registered", async () => {
+    document.body.innerHTML = fixture();
+    const first = await loadContentModule();
+    await vi.waitFor(() => expect(isHidden(byId(MATCHING_POST))).toBe(true));
+    expect(changeListeners.length).toBe(1);
+
+    const second = await loadContentModule();
+    expect(changeListeners.length).toBe(1);
+
+    first.dispose();
+    expect(changeListeners.length).toBe(1);
+
+    const late = document.createElement("div");
+    late.setAttribute("role", "article");
+    late.id = "post-after-reimport";
+    late.textContent = "You are an idiot";
+    (document.getElementById("feed") as HTMLElement).appendChild(late);
+    await vi.waitFor(() => expect(isHidden(late)).toBe(true));
+
+    second.dispose();
+    expect(changeListeners.length).toBe(0);
+  });
+});
+
+function dispatchPageHide(persisted: boolean): void {
+  const event = new Event("pagehide") as Event & { persisted?: boolean };
+  Object.defineProperty(event, "persisted", { value: persisted });
+  window.dispatchEvent(event);
+}
+
+describe("content module disposal hardening", () => {
+  it("an in-flight settings load cannot mutate the DOM after dispose", async () => {
+    document.body.innerHTML = fixture();
+    const module = await loadContentModule();
+    const post = byId(MATCHING_POST);
+    await vi.waitFor(() => expect(isHidden(post)).toBe(true));
+
+    const chromeApi = (globalThis as unknown as {
+      chrome: { storage: { sync: Record<string, unknown> } };
+    }).chrome;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    chromeApi.storage.sync.get = vi.fn(async () => {
+      await gate;
+      return { [SETTINGS_KEY]: { ...DEFAULT_SETTINGS, language: "en" } };
+    });
+
+    fireStorageChange();
+    module.dispose();
+    expect(changeListeners.length).toBe(0);
+
+    release();
+    await settle();
+
+    expect(isHidden(post)).toBe(true);
+    expect(revealButtons(post)).toBe(1);
+  });
+
+  it("a retained reveal control cannot act through a disposed instance", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="solo"><div class="post-body">You are an idiot</div></div>' +
+      "</div>";
+    const module = await loadContentModule();
+    const solo = byId("solo");
+    await vi.waitFor(() => expect(isHidden(solo)).toBe(true));
+    const button = solo.querySelector(":scope > .tathabbut-reveal") as HTMLButtonElement;
+    expect(button).toBeInstanceOf(HTMLButtonElement);
+
+    module.dispose();
+    button.click();
+    await settle();
+
+    expect(isHidden(solo)).toBe(true);
+    expect(revealButtons(solo)).toBe(1);
+  });
+
+  it("permanent pagehide disposes the instance", async () => {
+    document.body.innerHTML = fixture();
+    const module = await loadContentModule();
+    await vi.waitFor(() => expect(isHidden(byId(MATCHING_POST))).toBe(true));
+    expect(changeListeners.length).toBe(1);
+
+    dispatchPageHide(false);
+
+    expect(changeListeners.length).toBe(0);
+    const late = document.createElement("div");
+    late.setAttribute("role", "article");
+    late.id = "post-after-teardown";
+    late.textContent = "You are an idiot";
+    (document.getElementById("feed") as HTMLElement).appendChild(late);
+    await settle();
+    expect(isHidden(late)).toBe(false);
+    module.dispose();
+    expect(changeListeners.length).toBe(0);
+  });
+
+  it("persisted pagehide keeps the instance active for bfcache restore", async () => {
+    document.body.innerHTML = fixture();
+    const module = await loadContentModule();
+    await vi.waitFor(() => expect(isHidden(byId(MATCHING_POST))).toBe(true));
+
+    dispatchPageHide(true);
+
+    expect(changeListeners.length).toBe(1);
+    const late = document.createElement("div");
+    late.setAttribute("role", "article");
+    late.id = "post-after-restore";
+    late.textContent = "You are an idiot";
+    (document.getElementById("feed") as HTMLElement).appendChild(late);
+    await vi.waitFor(() => expect(isHidden(late)).toBe(true));
+
+    module.dispose();
+    expect(changeListeners.length).toBe(0);
+  });
+
+  it("repeated pagehide events do not duplicate registrations", async () => {
+    document.body.innerHTML = fixture();
+    const module = await loadContentModule();
+    await vi.waitFor(() => expect(isHidden(byId(MATCHING_POST))).toBe(true));
+    expect(changeListeners.length).toBe(1);
+
+    dispatchPageHide(true);
+    dispatchPageHide(true);
+    expect(changeListeners.length).toBe(1);
+
+    const churn = document.createElement("div");
+    (document.getElementById("feed") as HTMLElement).appendChild(churn);
+    await settle();
+    expect(revealButtons(byId(MATCHING_POST))).toBe(1);
+
+    dispatchPageHide(false);
+    expect(changeListeners.length).toBe(0);
+    module.dispose();
+    expect(changeListeners.length).toBe(0);
   });
 });
