@@ -14,6 +14,9 @@ const MAX_TEXT_LENGTH = 4000;
 const MAX_QUEUED_ITEMS = 200;
 let settings: UserSettings = { ...DEFAULT_SETTINGS, enabledCategories: [...DEFAULT_SETTINGS.enabledCategories] };
 let settingsVersion = 0;
+// Set by dispose() to make a torn-down instance inert: a re-created content
+// script instance must not let the previous one keep observing or mutating the page.
+let disposed = false;
 
 interface ItemState {
   fingerprint: string;
@@ -105,6 +108,7 @@ function currentStatus(): ContentStatus {
 // Metadata only: counters, settings state, and outcome reasons.
 // Never post text, names, or URLs. No network involved.
 async function persistStatus(force: boolean): Promise<void> {
+  if (disposed) return;
   try {
     const snapshot = currentStatus();
     const { updatedAt, ...stable } = snapshot;
@@ -245,6 +249,7 @@ function releaseHiddenTarget(owner: Element, target: Element, userInitiated: boo
 }
 
 export function reveal(element: Element): void {
+  if (disposed) return;
   // Prefer the forward mapping when the caller passes the evaluated unit;
   // otherwise resolve a narrowed target back to its owner.
   const owner = hiddenTarget.has(element) ? element : (hiddenOwner.get(element) ?? element);
@@ -253,6 +258,7 @@ export function reveal(element: Element): void {
 }
 
 function revealFromButton(owner: Element, target: Element): void {
+  if (disposed) return;
   releaseHiddenTarget(owner, target, true);
 }
 
@@ -314,6 +320,7 @@ function narrowTarget(element: Element): Element {
 }
 
 export function applyResult(element: Element, result: Classification): void {
+  if (disposed) return;
   const decision = describeDecision(result);
   const fingerprint = itemStates.get(element)?.fingerprint ?? "unknown";
   if (!decision.hidden) {
@@ -389,6 +396,7 @@ export function applyResult(element: Element, result: Classification): void {
 }
 
 export function evaluate(element: Element): void {
+  if (disposed) return;
   if (!(element instanceof HTMLElement) || !element.isConnected) return;
   if (!settings.enabled) {
     reveal(element);
@@ -429,7 +437,11 @@ export function evaluate(element: Element): void {
   itemStates.set(element, state);
 
   const accepted = queue.enqueue(async () => {
+    if (disposed) return;
     const result = await classify(text);
+    // The instance may have been disposed while classification was awaited;
+    // do not read state or account for a result that can no longer be applied.
+    if (disposed) return;
     const latest = itemStates.get(element);
     if (!element.isConnected ||
         latest?.fingerprint !== fingerprint ||
@@ -461,6 +473,7 @@ export function scan(): void {
 }
 
 function processMutations(records: MutationRecord[]): void {
+  if (disposed) return;
   const affected = new Set<Element>();
   for (const record of records) {
     const parentUnit = contentUnitFor(record.target);
@@ -476,9 +489,13 @@ function processMutations(records: MutationRecord[]): void {
 }
 
 async function loadSettings(): Promise<void> {
+  if (disposed) return;
   let storedDebug: unknown = false;
   try {
     const stored = await chrome.storage.sync.get("tathabbutSettings");
+    // A load that started before teardown must not apply after it: bail out
+    // before touching state, DOM, or scanning.
+    if (disposed) return;
     let localDebug: unknown = false;
     try {
       const localStored = await chrome.storage.local.get(DEBUG_FLAG_KEY);
@@ -487,6 +504,8 @@ async function loadSettings(): Promise<void> {
     } catch {
       // A missing local flag simply leaves diagnostics off.
     }
+    // The second read is also a suspension point; recheck before applying.
+    if (disposed) return;
     const candidate = stored.tathabbutSettings as Partial<UserSettings> | undefined;
     if (candidate && typeof candidate === "object") {
       settings = {
@@ -504,10 +523,14 @@ async function loadSettings(): Promise<void> {
       settings = { ...DEFAULT_SETTINGS, enabledCategories: [...DEFAULT_SETTINGS.enabledCategories] };
     }
   } catch {
+    if (disposed) return;
     // Keep safe local defaults if extension storage is unavailable.
     stats.settingsOk = false;
   }
 
+  // Final guard before the settings-version bump, reveal loop, and scan,
+  // so a torn-down instance never mutates the page or schedules work.
+  if (disposed) return;
   debugEnabled = storedDebug === true || readLocalDebugFlag();
   void persistStatus(true);
 
@@ -524,17 +547,47 @@ async function loadSettings(): Promise<void> {
 
 void loadSettings();
 
+function handleStorageChange(changes: { [key: string]: unknown }, areaName: string): void {
+  if (disposed) return;
+  if (areaName === "sync" && changes.tathabbutSettings) void loadSettings();
+  else if (areaName === "local" && changes[DEBUG_FLAG_KEY]) void loadSettings();
+}
+
 const observer = new MutationObserver(processMutations);
+
+// A content script owns its observer and storage listener for as long as the
+// document lives. dispose() is the single teardown point for that ownership: it
+// detaches both registrations and marks the instance inert so work it already
+// queued cannot keep mutating the DOM. Permanent pagehide binds the same
+// teardown to real document unload, and a re-imported module (as tests do) can
+// call it explicitly instead of leaking the previous instance's resources.
+export function dispose(): void {
+  if (disposed) return;
+  disposed = true;
+  observer.disconnect();
+  chrome.storage.onChanged.removeListener(handleStorageChange);
+  window.removeEventListener("pagehide", handlePageHide);
+}
+
+// pagehide fires both for permanent unload and when the document is frozen into
+// the back-forward cache. A bfcached document is restored without re-running its
+// content script, so disposing on persisted=true would leave filtering dead after
+// a restore. Only a real teardown (persisted=false) disposes; keeping the single
+// observer/listener registered means a restore needs no reinitialization and
+// cannot register duplicates.
+function handlePageHide(event: PageTransitionEvent): void {
+  if (event.persisted) return;
+  dispose();
+}
+
 observer.observe(document.documentElement, {
   childList: true,
   subtree: true,
   characterData: true
 });
 
-chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "sync" && changes.tathabbutSettings) void loadSettings();
-  else if (areaName === "local" && changes[DEBUG_FLAG_KEY]) void loadSettings();
-});
+chrome.storage.onChanged.addListener(handleStorageChange);
+window.addEventListener("pagehide", handlePageHide);
 
 void persistStatus(true);
 debugLog("loaded", { topFrame: window.top === window });
