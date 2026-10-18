@@ -188,6 +188,27 @@ describe("narrow hide targets (parent-container false positive)", () => {
     expect(revealButtons(child)).toBe(1);
   });
 
+  it("invalidates a manual reveal when filtering settings are reloaded", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="mixed-article">' +
+      '<div class="post-body">I respectfully disagree with your opinion.</div>' +
+      '<div class="plain-reply">You are an idiot</div>' +
+      '</div></div>';
+    await loadContentModule();
+    const child = document.querySelector("#mixed-article .plain-reply") as HTMLElement;
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+
+    (child.querySelector(":scope > .tathabbut-reveal") as HTMLButtonElement).click();
+    expect(isHidden(child)).toBe(false);
+
+    storedSettings = { ...DEFAULT_SETTINGS, language: "en" };
+    fireStorageChange();
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+    expect((child.querySelector(":scope > .tathabbut-reveal") as HTMLButtonElement).textContent)
+      .toBe("Reveal content");
+  });
+
   it("keeps one control on the narrowed target across churn", async () => {
     document.body.innerHTML =
       '<div id="feed">' +
