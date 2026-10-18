@@ -144,6 +144,50 @@ describe("narrow hide targets (parent-container false positive)", () => {
     expect(revealButtons(child)).toBe(0);
   });
 
+  it("keeps an explicitly revealed narrowed reply visible when sibling metadata changes", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="mixed-article">' +
+      '<div class="post-body">I respectfully disagree with your opinion.</div>' +
+      '<div class="plain-reply">You are an idiot</div>' +
+      '</div></div>';
+    await loadContentModule();
+    const article = byId("mixed-article");
+    const child = document.querySelector("#mixed-article .plain-reply") as HTMLElement;
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+
+    (child.querySelector(":scope > .tathabbut-reveal") as HTMLButtonElement).click();
+    expect(isHidden(child)).toBe(false);
+
+    const timestamp = document.createElement("span");
+    timestamp.id = "sibling-metadata";
+    timestamp.textContent = " · 2 min";
+    article.appendChild(timestamp);
+    await settle();
+
+    expect(isHidden(child)).toBe(false);
+    expect(revealButtons(child)).toBe(0);
+    expect(child.querySelector(":scope > .tathabbut-notice")).toBeNull();
+  });
+
+  it("reclassifies a narrowed reply when its own text changes after reveal", async () => {
+    document.body.innerHTML =
+      '<div id="feed">' +
+      '<div role="article" id="mixed-article">' +
+      '<div class="post-body">I respectfully disagree with your opinion.</div>' +
+      '<div class="plain-reply">You are an idiot</div>' +
+      '</div></div>';
+    await loadContentModule();
+    const child = document.querySelector("#mixed-article .plain-reply") as HTMLElement;
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+
+    (child.querySelector(":scope > .tathabbut-reveal") as HTMLButtonElement).click();
+    child.textContent = "Shut up, you are pathetic";
+
+    await vi.waitFor(() => expect(isHidden(child)).toBe(true));
+    expect(revealButtons(child)).toBe(1);
+  });
+
   it("keeps one control on the narrowed target across churn", async () => {
     document.body.innerHTML =
       '<div id="feed">' +
