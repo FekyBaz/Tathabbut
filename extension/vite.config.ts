@@ -1,6 +1,9 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  define: {
+    __TATHABBUT_DIAGNOSTIC_BUILD_ID__: JSON.stringify(`content-${Date.now().toString(36)}`)
+  },
   build: {
     outDir: "dist",
     emptyOutDir: false,

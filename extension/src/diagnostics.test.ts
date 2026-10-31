@@ -49,6 +49,8 @@ describe("diagnostics helpers", () => {
       "empty-text",
       "unchanged",
       "queue-full",
+      "hide-failed",
+      "user-revealed",
       "starting"
     ]) {
       const text = describeReason(reason);
@@ -120,7 +122,7 @@ describe("statusViewModel", () => {
     expect(view.started).toContain("Running since");
     expect(view.settings).toContain("threshold 0.85");
     expect(view.counts).toBe("3 / 3 / 1 / 4");
-    expect(view.skips).toBe("2 unchanged · 1 empty · 0 disabled · 1 queue-full");
+    expect(view.skips).toBe("2 unchanged · 1 empty · 0 disabled · 1 queue-full · 0 hide-failed");
     expect(view.source).toBe("www.facebook.com");
   });
 

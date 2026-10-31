@@ -6,6 +6,11 @@ import { defineConfig } from "vite";
 // external chunks. The service worker and popup stay ES modules and are
 // built by vite.config.ts.
 export default defineConfig({
+  // This identifies a content-script build in local diagnostics. It is not
+  // evidence that a browser instance has loaded that build.
+  define: {
+    __TATHABBUT_DIAGNOSTIC_BUILD_ID__: JSON.stringify(`content-${Date.now().toString(36)}`)
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,

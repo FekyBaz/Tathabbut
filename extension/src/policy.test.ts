@@ -2,6 +2,108 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_SETTINGS, classifyLocally, isUsableRemoteClassification, normalizeForRules, shouldHide } from "./policy";
 
 describe("classifyLocally", () => {
+  it("detects V5 development-supported fraud and joke insults while preserving object, idea, and reported negatives", () => {
+    for (const text of [
+      "You are a complete fraud, stop pretending to help.",
+      "You are an absolute joke of a teammate.",
+      "You are a hopeless joke of an employee.",
+      "You are أهبل and you keep derailing the work.",
+      "إنت joke ومش نافع معانا",
+      "enta faker w mesh betefham"
+    ]) expect(classifyLocally(text).labels.map((label) => label.category), text).toContain("harassment");
+    for (const text of [
+      "This module is a joke and should be rewritten.",
+      "The joke in this release is the broken installer.",
+      "Your argument is a complete fraud.",
+      "The code ده أهبل ومش بيشتغل",
+      "The app is faker w byb3at data ghalat",
+      "The analyst called him a fraud in the report."
+    ]) expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+  it("does not let a generic mention of 'phrase' truncate a spam match", () => {
+    expect(classifyLocally("Send your wallet phrase now to unlock guaranteed profit").labels.map((label) => label.category)).toContain("spam");
+  });
+  it("protects explicit discussion of abusive wording without suppressing unrelated attacks", () => {
+    expect(classifyLocally("The phrase you are an idiot is a personal insult.").labels).toEqual([]);
+    expect(classifyLocally("The phrase is easy to remember; you are an idiot.").labels.map((label) => label.category)).toContain("harassment");
+  });
+  it("detects mixed-script prize bait only when private solicitation and claiming co-occur", () => {
+    expect(classifyLocally("مبروك كسبت prize ابعتلي خاص عشان تستلمها").labels.map((label) => label.category)).toContain("spam");
+    expect(classifyLocally("مبروك كسبت prize في مسابقة المدرسة واستلمتها امبارح").labels.map((label) => label.category)).not.toContain("spam");
+  });
+  it("detects the development-supported Arabizi prize-claim phrase but not a past-prize mention", () => {
+    expect(classifyLocally("mabrook kasabt el prize, eb3atly private 3ashan testalemha").labels.map((label) => label.category)).toContain("spam");
+    expect(classifyLocally("mabrook kasabt prize fel madrasa embare7").labels.map((label) => label.category)).not.toContain("spam");
+  });
+  it("detects newly supported enta/enty Arabizi prize solicitations only with reward, private contact, and collection cues", () => {
+    for (const text of [
+      "enta kasabt el reward, eb3atli private 3ashan testalemha",
+      "enta kasabt el flos, eb3atly private 3ashan testalem el bonus",
+      "enta kasabt bonus, eb3atli 3al private 3ashan testalem el reward"
+    ]) expect(classifyLocally(text).labels.map((label) => label.category)).toContain("spam");
+    for (const text of [
+      "enta kasabt prize fel madrasa embare7 w estalemto",
+      "Congrats on your prize! التسجيل مفتوح لكل الناس بدون DM",
+      "eb3atly private 3ashan ab3atlak el address",
+      "enta kasabt prize w ابعتلي خاص بس عشان احكيلك النتيجة",
+      "eb3atli private 3ashan ab3atlak el file"
+    ]) expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("spam");
+  });
+  it("detects future-intent body-part threats while protecting reports, negation, and technical uses", () => {
+    for (const text of [
+      "I'll break your jaw if you come back.",
+      "I am going to smash your nose if you approach me.",
+      "I promise I will break your arm if you touch my car.",
+      "I’m going to smash your nose if you return."
+    ]) expect(classifyLocally(text).labels.map((label) => label.category)).toContain("threats");
+    for (const text of [
+      "I will not break your jaw; I want to talk.",
+      "The article quotes him: ‘I will break your nose.’",
+      "The witness reported, ‘I’ll break your nose.’",
+      "He joked, ‘I will break your jaw,’ as part of a comedy sketch.",
+      "I hope you break your record this year.",
+      "We need to break the build before release."
+    ]) expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("threats");
+  });
+  it.each(["ha2telek law terg3 hena", "haksarak law terga3 hena"])(
+    "detects an attested direct Arabizi threat: %s",
+    (text) => expect(classifyLocally(text).labels.map((label) => label.category)).toContain("threats")
+  );
+  it("detects the attested Arabizi vocative insult and exempts its reported use", () => {
+    expect(classifyLocally("ya ahbal, enta mesh betefham").labels.map((label) => label.category)).toContain("harassment");
+    expect(classifyLocally("howa 2al ya ahbal fel comment").labels.map((label) => label.category)).not.toContain("harassment");
+  });
+  it.each(["ana mesh ha2telek, 3ayez netkalem", "msh hadrabak, ana 3ayez atfahm"])(
+    "keeps an explicitly negated Arabizi threat visible: %s",
+    (text) => expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("threats")
+  );
+  it("keeps an Arabizi threat attributed to someone else visible", () => {
+    expect(classifyLocally("howa 2al hadrabak law terga3, bas mesh ana").labels).toEqual([]);
+  });
+  it("recognizes a direct English insult with a common intensifier", () => {
+    expect(classifyLocally("You're a complete idiot!").labels.map((label) => label.category)).toContain("harassment");
+  });
+  it.each(["enta ghaby", "ya 7mar"])("recognizes a narrow direct Arabizi insult: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).toContain("harassment");
+  });
+  it("returns the matching rule ID and an explanation for local decisions", () => {
+    const result = classifyLocally("You are an idiot");
+    expect(result.matches).toContainEqual({
+      category: "harassment",
+      ruleId: "harassment.1",
+      reason: "Targeted personal abuse phrase matched."
+    });
+  });
+  it.each(["مش هقتلك، خلينا نتكلم بهدوء", "انا مش هضربك", "مش هكسرك ولا هأذيك"])(
+    "does not treat an explicitly negated Egyptian threat as a threat: %s",
+    (text) => expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("threats")
+  );
+  it("keeps an unnegated Egyptian threat detectable", () => {
+    expect(classifyLocally("هقتلك لو قربت").labels.map((label) => label.category)).toContain("threats");
+  });
+  it("does not classify an Arabic reported threat as the author's threat", () => {
+    expect(classifyLocally("التقرير نقل عنه قوله: سوف اقتلك").labels).toEqual([]);
+  });
   it("detects a narrow direct English insult example", () => {
     expect(classifyLocally("You are an idiot").labels.map((label) => label.category)).toContain("harassment");
   });
@@ -137,6 +239,28 @@ describe("live Egyptian Arabic standalone put-down regression", () => {
 
   it.each(["رأيك مش دقيق ومحتاج دليل", "أنا مختلف معاك في الرأي"])("keeps respectful criticism visible: %s", (text) => {
     expect(classifyLocally(text).labels).toEqual([]);
+  });
+});
+
+describe("Egyptian vocative profanity and personal-target controls", () => {
+  it.each(["يا علق", "يا عِلْق!", "انت علق", "إنت علق، ركز", "غبي", "فاشل"])(
+    "classifies the reported direct insult form: %s",
+    (text) => expect(classifyLocally(text).labels.map((label) => label.category)).toContain("harassment")
+  );
+  it.each([
+    "كلمة علق شتيمة ومش مناسبة",
+    "هو كتب لها: يا علق",
+    "متقولش لحد يا علق",
+    "أنا مختلف معاك في الرأي",
+    "رأيك مش دقيق ومحتاج دليل",
+    "أنا مختلف معاك، وعندي أدلة على رأيي",
+    "تحليلك مش دقيق ومحتاج مصادر أقوى",
+    "الكود فاشل ومحتاج إعادة كتابة",
+    "الشرح ضعيف ومش واضح",
+    "الفشل بنفسه",
+    "فاشل ادج"
+  ])("keeps discussion, reporting, criticism, or ambiguous form visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
   });
 });
 

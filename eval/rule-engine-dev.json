@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "split": "development",
+  "description": "Synthetic deterministic-rule development examples; labels are explicit and ambiguous items are excluded from clear-case metrics.",
+  "items": [
+    {"id":"dev-en-threat-neg-1","text":"I am not going to kill you; I want to resolve this peacefully.","expect":[],"lang":"en","status":"clear","category":"threats","rationale":"Explicitly denies intent and states peaceful intent."},
+    {"id":"dev-ar-threat-neg-1","text":"مش هقتلك، خلينا نتكلم بهدوء","expect":[],"lang":"ar","status":"clear","category":"threats","rationale":"Egyptian Arabic negation denies the threat."},
+    {"id":"dev-ar-threat-neg-2","text":"انا مش هضربك","expect":[],"lang":"ar","status":"clear","category":"threats","rationale":"Egyptian Arabic negation denies intent to hit."},
+    {"id":"dev-ar-threat-pos-1","text":"هقتلك لو قربت","expect":["threats"],"lang":"ar","status":"clear","category":"threats","rationale":"Direct future threat addressed to the reader."},
+    {"id":"dev-en-threat-pos-1","text":"I'll stab you","expect":["threats"],"lang":"en","status":"clear","category":"threats","rationale":"Direct explicit threat."},
+    {"id":"dev-en-crit-1","text":"Your explanation is unclear and needs examples.","expect":[],"lang":"en","status":"clear","category":"harassment","rationale":"Criticizes an explanation without a personal attack."},
+    {"id":"dev-ar-crit-1","text":"شرحك مش واضح ومحتاج امثلة","expect":[],"lang":"ar","status":"clear","category":"harassment","rationale":"Criticizes explanation quality, not the person."},
+    {"id":"dev-mix-insult-1","text":"يا غبي, this code review makes no sense","expect":["harassment"],"lang":"mixed","status":"clear","category":"harassment","rationale":"Contains an explicit direct Arabic insult alongside English criticism."},
+    {"id":"dev-ar-quote-1","text":"قال لي: انت غبي وبعدها اعتذر","expect":[],"lang":"ar","status":"clear","category":"harassment","rationale":"Reports an insult said by someone else."},
+    {"id":"dev-en-quote-1","text":"She said you are an idiot, then apologized.","expect":[],"lang":"en","status":"clear","category":"harassment","rationale":"Reports another speaker's insult."},
+    {"id":"dev-en-target-1","text":"You're a complete idiot!","expect":["harassment"],"lang":"en","status":"clear","category":"harassment","rationale":"Direct personal insult with intensifier."},
+    {"id":"dev-ar-target-1","text":"انت يا حمار","expect":["harassment"],"lang":"ar","status":"clear","category":"harassment","rationale":"Direct second-person insult."},
+    {"id":"dev-en-neg-word-1","text":"The word idiot is insulting when directed at someone.","expect":[],"lang":"en","status":"clear","category":"harassment","rationale":"Discusses an offensive term without targeting anyone."},
+    {"id":"dev-ar-neg-word-1","text":"كلمة غبي مش مقبولة كشتيمة","expect":[],"lang":"ar","status":"clear","category":"harassment","rationale":"Discusses an insult as a term, not as an attack."},
+    {"id":"dev-en-amb-1","text":"That's genius.","expect":[],"lang":"en","status":"ambiguous","category":"harassment","rationale":"Could be sincere praise or sarcasm; no reliable context."},
+    {"id":"dev-ar-amb-1","text":"يا سلام على الفهم","expect":["harassment"],"lang":"ar","status":"ambiguous","category":"harassment","rationale":"Phrase may be sarcastic mockery or context-dependent banter."},
+    {"id":"dev-ar-diacritic-1","text":"إِنْتَ غَبِي","expect":["harassment"],"lang":"ar","status":"clear","category":"harassment","rationale":"Direct insult with diacritics and alef variant."},
+    {"id":"dev-ar-spam-1","text":"مبروك كسبت الجائزة!!!","expect":["spam"],"lang":"ar","status":"clear","category":"spam","rationale":"Known prize scam wording with punctuation variation."},
+    {"id":"dev-en-spam-neg-1","text":"I got a prize at the school raffle.","expect":[],"lang":"en","status":"clear","category":"spam","rationale":"Benign prize mention without solicitation."},
+    {"id":"dev-ar-threat-quoted-1","text":"التقرير نقل عنه قوله: سوف اقتلك","expect":[],"lang":"ar","status":"clear","category":"threats","rationale":"News/reporting of a threat, not a threat by the author."},
+    {"id":"dev-arabizi-insult-1","text":"enta ghaby","expect":["harassment"],"lang":"arabizi","status":"clear","category":"harassment","rationale":"Direct second-person insult in common Arabizi transliteration."},
+    {"id":"dev-arabizi-crit-1","text":"el code da feeh akhta2 w محتاج refactor","expect":[],"lang":"mixed","status":"clear","category":"harassment","rationale":"Criticism of code quality in mixed Arabizi, Arabic, and English."},
+    {"id":"dev-repeat-1","text":"You are an idiooot!!!","expect":["harassment"],"lang":"en","status":"clear","category":"harassment","rationale":"Direct insult with repeated letters and punctuation variation."}
+  ]
+}

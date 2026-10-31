@@ -1,0 +1,19 @@
+# Prioritized deterministic rule-engine gaps
+
+This report reflects source inspection plus the small synthetic corpora documented in `RULE_ENGINE_EVALUATION.md` and `ANNOTATION_GUIDELINES.md`.
+
+| Priority | Gap | Evidence | Deterministic next step | Decision |
+| --- | --- | --- | --- | --- |
+| P0 | Hate has no usable recall | v2 and v3 dev/test each miss 4/4 hate positives and avoid all hard negatives; current rule matches the literal placeholder `group`. | Establish reviewed identity targets and broader contrastive examples before selecting pattern vocabulary. | Do not add a general target/keyword list from four positives per split. |
+| P0 | Evaluation independence and provenance | V3 split integrity is checked, but the synthetic examples share one author; prior v1 held-out items were tuned against. | Obtain independent annotators and adjudication for future release-gate sets. | V3 is frozen against this tuning cycle, not independently authored or representative. |
+| P1 | English threat constructions | V3 dev misses `I'll break your jaw`; current English pattern has a fixed harm-verb list and pronoun target slot. | Add varied body-part constructions and hard negatives such as “break the build” before considering a regex. | No change this cycle; V3 test did not cover that construction. |
+| P1 | Arabizi threat variation | V3 detects its listed forms and all 4 test threats, but the small slice has one positive per dialect/language stratum. | Collect more verbs, spellings, negation, attribution, and quotation controls independently. | Keep the three explicit forms; do not generalize to fuzzy transliteration. |
+| P1 | Spam variants | V3 dev detects 4/4 positives; test misses 1/4 Arabizi cases because the opener differs (`enta kasabt` vs `mabrook kasabt`). | Add more opening constructions with non-scam prize mentions and private logistics controls. | Do not tune against the frozen miss; next cycle needs fresh test data. |
+| P1 | Harassment transliteration | The specific `ya ahbal` form is now covered; other Arabizi constructions and reported speech remain under-sampled. | Expand transliteration and attribution controls. | No broad Arabizi normalization. |
+| P2 | Typos and repeated characters | v1 dev/test include `idiooot` and `idot`, both missed. | Build adversarial typo versus benign-word pairs; compare bounded normalization against false-positive budget. | Fuzzy matching not justified by two examples. |
+| P1 | Reporting cue precedence | V3 showed standalone `phrase` cut off unrelated text; this is fixed with explicit discussion context. | Keep report/meta cues relational and add adversarial examples with cue words in unrelated content. | Fixed for this construction; broader cue quality needs more contrastive data. |
+| P2 | Rule match IDs are position-derived | Current IDs change if a rule is inserted before another. | Replace with explicit semantic IDs before diagnostics are consumed externally. | No classification behavior impact; technical cleanup only. |
+
+## Change gate
+
+Make a rule edit only when a development failure has a clear policy rationale, the proposed pattern is narrow, matched hard negatives are present, and regression tests cover both the positive and protected negative. Freeze code and dev decisions before scoring the new test set. If a test failure suggests a new rule, record it as a gap and wait for a future development cycle rather than tuning against this test set.

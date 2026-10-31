@@ -117,7 +117,7 @@ describe("popup diagnostics panel", () => {
     expect(text("st-source")).toBe("www.facebook.com");
     expect(text("st-articles")).toBe("5");
     expect(text("st-counts")).toBe("5 / 5 / 2 / 6");
-    expect(text("st-skips")).toBe("5 unchanged · 1 empty · 0 disabled · 0 queue-full");
+    expect(text("st-skips")).toBe("5 unchanged · 1 empty · 0 disabled · 0 queue-full · 0 hide-failed");
     expect(text("st-started")).toContain("Running since");
     expect(text("st-settings")).toContain("threshold 0.85");
   });

@@ -1,0 +1,175 @@
+{
+  "version": "5.0.0",
+  "split": "frozen-test",
+  "provenance": "Synthetic, single-author V5 examples; no independent reviewers or suitable sourced data available. Do not present as independent evidence.",
+  "items": [
+    {
+      "id": "v5t-harassment-1",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "You are a shameless fraud and a joke.",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal attack.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-2",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "This explanation is a joke; it skips the main point.",
+      "expect": [],
+      "rationale": "Negative critique targets an explanation.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-3",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "The customer called the reviewer a fraud.",
+      "expect": [],
+      "rationale": "Reports an attributed insult.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-4",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "The rollout is a complete mess.",
+      "expect": [],
+      "rationale": "Negative statement about a process.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-5",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "يا أهبل انت بتعطلنا",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Vocative insult and personal attack.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-6",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "البرنامج غبي وبيعلق كل شوية",
+      "expect": [],
+      "rationale": "Negative product criticism.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-7",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "الكلام ده مش مقنع ومحتاج مصدر",
+      "expect": [],
+      "rationale": "Criticizes a claim.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-8",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "المدير وصفه بأنه أهبل",
+      "expect": [],
+      "rationale": "Reported insult, not adopted by the author.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-9",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "إنت fraud ومش نافع في الشغل",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct attack at a person in mixed text.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-10",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "The checkout design غبي ومش واضح",
+      "expect": [],
+      "rationale": "Criticism targets product design.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-11",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "Your claim مبالغ فيه ومفيش عليه دليل",
+      "expect": [],
+      "rationale": "Criticizes a claim.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-12",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "They quoted “you are a fraud” in the article",
+      "expect": [],
+      "rationale": "Quoted language is reported.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-13",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "enta keda faker w kalamak kolo fake",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal insult and belittling.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-14",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el product faker w by2ol arqam ghalat",
+      "expect": [],
+      "rationale": "Negative product description.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-15",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el ra2y da mesh mazboot w 3ayez daleel",
+      "expect": [],
+      "rationale": "Criticizes an argument.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5t-harassment-16",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "heya 2aletlo ya ahbal fel call",
+      "expect": [],
+      "rationale": "Reports attributed speech.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    }
+  ]
+}

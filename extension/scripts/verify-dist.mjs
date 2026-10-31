@@ -40,6 +40,10 @@ function assertClassicScript(name, source) {
 }
 
 const manifestRaw = await read("manifest.json");
+const contentSource = await read("content.js");
+if (contentSource && !/buildId\s*:\s*["']content-[a-z0-9]+["']/.test(contentSource)) {
+  fail("content.js is missing its generated diagnostic build identifier.");
+}
 if (manifestRaw) {
   let manifest;
   try {

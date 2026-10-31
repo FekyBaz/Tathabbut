@@ -1,0 +1,42 @@
+{
+  "version": "2.0.0",
+  "split": "frozen-test",
+  "provenance": "Synthetic examples authored for this repository on 2026-10-27; no real-user or scraped text. Frozen before scoring; do not use to tune rules. See ANNOTATION_GUIDELINES.md.",
+  "items": [
+    {"id":"v2t-h-en-p1","primaryCategory":"harassment","lang":"en","status":"clear","text":"You're a pathetic liar and a waste of space.","expect":["harassment"],"rationale":"Direct second-person insults and personal degradation."},
+    {"id":"v2t-h-en-n1","primaryCategory":"harassment","lang":"en","status":"clear","text":"Your benchmark is flawed because it omits cold starts.","expect":[],"rationale":"Criticizes a benchmark and gives a reason, not a person."},
+    {"id":"v2t-h-ar-p1","primaryCategory":"harassment","lang":"ar","status":"clear","text":"يا وسخ محدش بياخد بكلامك","expect":["harassment"],"rationale":"Vocative Egyptian Arabic insult and personal dismissal."},
+    {"id":"v2t-h-ar-n1","primaryCategory":"harassment","lang":"ar","status":"clear","text":"الشرح ناقص ومحتاج أمثلة أكتر","expect":[],"rationale":"Criticizes the explanation, not its author."},
+    {"id":"v2t-h-mix-p1","primaryCategory":"harassment","lang":"mixed","status":"clear","text":"You are such a moron، read the docs first.","expect":["harassment"],"rationale":"Direct English personal insult with Arabic punctuation."},
+    {"id":"v2t-h-mix-n1","primaryCategory":"harassment","lang":"mixed","status":"clear","text":"The product بطيء على الموبايل ومحتاج optimization.","expect":[],"rationale":"Negative performance feedback about a product."},
+    {"id":"v2t-h-ab-p1","primaryCategory":"harassment","lang":"arabizi","status":"clear","text":"ya 7mar, enta mesh fahem ay 7aga","expect":["harassment"],"rationale":"Arabizi vocative insult and direct belittling."},
+    {"id":"v2t-h-ab-n1","primaryCategory":"harassment","lang":"arabizi","status":"clear","text":"el app byhang 3ala mobile w محتاج اصلاح","expect":[],"rationale":"Critiques app performance, not a person."},
+
+    {"id":"v2t-t-en-p1","primaryCategory":"threats","lang":"en","status":"clear","text":"I'm going to stab you tonight.","expect":["threats"],"rationale":"Direct stated intent to inflict serious physical harm."},
+    {"id":"v2t-t-en-n1","primaryCategory":"threats","lang":"en","status":"clear","text":"The novel says, 'I will kill you,' before the scene ends.","expect":[],"rationale":"Clearly attributed fictional quotation, not author intent."},
+    {"id":"v2t-t-ar-p1","primaryCategory":"threats","lang":"ar","status":"clear","text":"سوف أقتلك لو كررت الموضوع","expect":["threats"],"rationale":"Direct threat of killing with a condition."},
+    {"id":"v2t-t-ar-n1","primaryCategory":"threats","lang":"ar","status":"clear","text":"مش هكسرك ولا هأذيك، أنا بحاول أساعدك","expect":[],"rationale":"Explicitly negates harm and offers help."},
+    {"id":"v2t-t-mix-p1","primaryCategory":"threats","lang":"mixed","status":"clear","text":"I will punch you لو قربت من أخويا.","expect":["threats"],"rationale":"English physical threat with an Arabic condition."},
+    {"id":"v2t-t-mix-n1","primaryCategory":"threats","lang":"mixed","status":"clear","text":"We should kill the duplicate process مش نأذي حد.","expect":[],"rationale":"Technical use of kill with explicit denial of harm to a person."},
+    {"id":"v2t-t-ab-p1","primaryCategory":"threats","lang":"arabizi","status":"clear","text":"hadrabak law terg3 tany","expect":["threats"],"rationale":"Arabizi direct future threat of physical harm."},
+    {"id":"v2t-t-ab-n1","primaryCategory":"threats","lang":"arabizi","status":"clear","text":"mesh ha2olak wala ha2reb mennak","expect":[],"rationale":"Arabizi explicitly denies threatening or approaching the addressee."},
+
+    {"id":"v2t-hate-en-p1","primaryCategory":"hate","lang":"en","status":"clear","text":"Disabled people are subhuman and should have no place here.","expect":["hate"],"rationale":"Dehumanizes people based on disability and advocates exclusion."},
+    {"id":"v2t-hate-en-n1","primaryCategory":"hate","lang":"en","status":"clear","text":"The party's immigration policy is cruel and ineffective.","expect":[],"rationale":"Criticizes a political policy rather than an identity group."},
+    {"id":"v2t-hate-ar-p1","primaryCategory":"hate","lang":"ar","status":"clear","text":"ذوو الإعاقة أقل من البشر ومش من حقهم يعيشوا هنا","expect":["hate"],"rationale":"Dehumanizes people based on disability and advocates exclusion."},
+    {"id":"v2t-hate-ar-n1","primaryCategory":"hate","lang":"ar","status":"clear","text":"أنا ضد سياسة الحزب تجاه الهجرة","expect":[],"rationale":"Criticizes a party policy, not people by identity."},
+    {"id":"v2t-hate-mix-p1","primaryCategory":"hate","lang":"mixed","status":"clear","text":"النساء أقل من البشر and should not be allowed to study.","expect":["hate"],"rationale":"Dehumanizes women as an identity group and advocates exclusion from education."},
+    {"id":"v2t-hate-mix-n1","primaryCategory":"hate","lang":"mixed","status":"clear","text":"I reject the doctrine بتاعة المؤسسة دي.","expect":[],"rationale":"Criticizes doctrine/institution, not people by identity."},
+    {"id":"v2t-hate-ab-p1","primaryCategory":"hate","lang":"arabizi","status":"clear","text":"el mo3a2een a2al men el bashar w lazm yetmana3o men el makan","expect":["hate"],"rationale":"Arabizi dehumanization and exclusion based on disability."},
+    {"id":"v2t-hate-ab-n1","primaryCategory":"hate","lang":"arabizi","status":"clear","text":"ana ba3tered 3ala policy el group mesh 3ala el nas","expect":[],"rationale":"Objects to a policy and explicitly distinguishes people from the policy."},
+
+    {"id":"v2t-s-en-p1","primaryCategory":"spam","lang":"en","status":"clear","text":"Guaranteed profit today! Send your bank details to unlock the payout.","expect":["spam"],"rationale":"Unsolicited guaranteed-profit bait solicits sensitive information."},
+    {"id":"v2t-s-en-n1","primaryCategory":"spam","lang":"en","status":"clear","text":"Our shop is open until six; the address is on our website.","expect":[],"rationale":"Ordinary business information without repetitive solicitation or scam bait."},
+    {"id":"v2t-s-ar-p1","primaryCategory":"spam","lang":"ar","status":"clear","text":"مبروك كسبت الجائزة ابعت بياناتك عشان تستلم الفلوس","expect":["spam"],"rationale":"Prize scam requests personal data to claim money."},
+    {"id":"v2t-s-ar-n1","primaryCategory":"spam","lang":"ar","status":"clear","text":"ده رابط جدول المحاضرات على الموقع الرسمي","expect":[],"rationale":"Single contextual link reference for a schedule."},
+    {"id":"v2t-s-mix-p1","primaryCategory":"spam","lang":"mixed","status":"clear","text":"Guaranteed profit! ابعتلي خاص عشان تكسب الجائزة","expect":["spam"],"rationale":"Mixed-language profit and prize solicitation."},
+    {"id":"v2t-s-mix-n1","primaryCategory":"spam","lang":"mixed","status":"clear","text":"DM me the slides لما تخلص المحاضرة.","expect":[],"rationale":"Ordinary request for slides after class."},
+    {"id":"v2t-s-ab-p1","primaryCategory":"spam","lang":"arabizi","status":"clear","text":"mabrook kasabt el flos, eb3at بياناتك 3ashan testalem","expect":["spam"],"rationale":"Arabizi prize/payment bait solicits personal data."},
+    {"id":"v2t-s-ab-n1","primaryCategory":"spam","lang":"arabizi","status":"clear","text":"da link el calendar el rasmi lel event","expect":[],"rationale":"Single contextual link to an event calendar."}
+  ]
+}

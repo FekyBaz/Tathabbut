@@ -18,5 +18,6 @@ The same words can be used in abuse, quotation, reporting, education, satire, re
 - Conservative defaults and reversible hiding.
 - No automatic reporting, deleting, or posting.
 - Misinformation suppression is not enabled by default.
-- Arabic patterns currently cover only a few explicit starter examples; they are not broad Arabic or Egyptian-dialect understanding.
+- A narrow local reporting/quotation guard protects common "he said / the word / quoted example" forms, but ambiguous or unmarked quotation can still be missed.
+- Arabic patterns cover explicit starter examples and a labeled corpus; they are not broad Arabic or Egyptian-dialect understanding.
 - Evaluate precision, recall, false-positive rate, and false-negative rate on consented, diverse examples before changing thresholds.

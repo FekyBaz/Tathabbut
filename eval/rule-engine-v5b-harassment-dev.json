@@ -1,0 +1,175 @@
+{
+  "version": "5.1.0",
+  "split": "development",
+  "provenance": "Distinct from V5a; synthetic single-author cases authored before rule changes; not independently reviewed.",
+  "items": [
+    {
+      "id": "v5d2-harassment-1",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "You are a hopeless joke of an employee.",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal degradation.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-2",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "This module is a joke and should be rewritten.",
+      "expect": [],
+      "rationale": "Criticism of code, not its author.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-3",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "The analyst called him a fraud in the report.",
+      "expect": [],
+      "rationale": "Attributed speech, not adopted.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-4",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "Your argument is a complete fraud.",
+      "expect": [],
+      "rationale": "Could be interpreted as critique of an argument; preserve pending independent review.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-5",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "يا أهبل انت بتضيع وقتنا",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct vocative personal insult.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-6",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "الكود ده أهبل ومش بيشتغل",
+      "expect": [],
+      "rationale": "Negative code description.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-7",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "الرأي ده ضعيف ومفيش دليل",
+      "expect": [],
+      "rationale": "Criticism of an idea.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-8",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "البرنامج بطيء وبيهنج",
+      "expect": [],
+      "rationale": "Product criticism.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-9",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "إنت joke ومش نافع معانا",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal put-down in mixed language.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-10",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "The design ده joke ومش واضح",
+      "expect": [],
+      "rationale": "Product/design criticism.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-11",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "Your explanation ضعيفة ومحتاجة مثال",
+      "expect": [],
+      "rationale": "Criticism targets explanation.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-12",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "The code is a fraud because it returns fake values",
+      "expect": [],
+      "rationale": "Description of code behavior, not a person.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-13",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "enta faker w mesh betefham",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct Arabizi insult targeted at a participant.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-14",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el app faker w byb3at data ghalat",
+      "expect": [],
+      "rationale": "Negative product claim.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-15",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el argument mesh mo2ne3 w 3ayez daleel",
+      "expect": [],
+      "rationale": "Criticism of an argument.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    },
+    {
+      "id": "v5d2-harassment-16",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el description bt2ol el feature bt3mel eh",
+      "expect": [],
+      "rationale": "Neutral product explanation.",
+      "provenance": "Synthetic second V5 dev cycle, task-author authored, not independently reviewed; 2026-10-28"
+    }
+  ]
+}
