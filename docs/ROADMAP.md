@@ -1,25 +1,132 @@
-# Roadmap
+# Roadmap — خطة التطوير (منتج)
 
-## Foundation
-- [x] Document principles, privacy, threat model, and contributions.
-- [x] Create the Chrome extension and FastAPI starter with tests.
-- [ ] Manually validate selectors with a dedicated Facebook test profile.
+> **هذه الخطة خاصة بتطوير المنتج الفعلي** وليست مرتبطة بأي تقييم أكاديمي (مثل درجات
+> مشروع تخرج أو Novelty). الجزء الأكاديمي من المراجعة الخارجية مستبعد؛ يُعتمد فقط على
+> الأدلة التقنية الموثقة في `eval/` وفي [`EXTERNAL_REVIEW_ANALYSIS.md`](EXTERNAL_REVIEW_ANALYSIS.md).
+>
+> **الهدف الأول المعتمد:** الوصول إلى **أعلى نتيجة قابلة للقياس من محرك القواعد** قبل
+> إدخال أي طبقة تصنيف ذكية.
 
-## Local MVP
-- [ ] Test common feed layouts, languages, and page navigation.
-- [ ] Add polished accessible popup settings.
-- [ ] Improve restore controls and keyboard navigation.
-- [ ] Create a consented evaluation set with benign counterexamples.
-- [ ] Report precision, recall, FPR, and FNR.
+---
 
-## Optional model service
-- [ ] Implement backend-only provider adapter.
-- [ ] Add rate limits, timeout/cost budgets, and structured output validation.
-- [ ] Add consent UI before sending remote text.
-- [ ] Add provider contract and prompt-injection tests.
-- [ ] Publish model and dataset limitations.
+## 0. نقطة الانطلاق — الوضع الفعلي (2026-11-17)
 
-## Later
-- [ ] Add platform adapters for other sites.
-- [ ] Consider evidence-aware verification only with provenance and caveats.
-- [ ] Consider Firefox after Chrome behavior stabilizes.
+- الشجرة الحالية: **399 اختبارًا ناجحًا** (19 ملفًا)، `tsc --noEmit` نظيف،
+  `npm run build` + `verify-dist` ناجحان، والبنية الآن **local-only** (بدون
+  background/remote-api في الحزمة).
+- سبع دورات تقييم مجمدة (V1–V7) مع منهجية وتقارير أخطاء:
+  [`eval/RULE_ENGINE_EVALUATION.md`](../eval/RULE_ENGINE_EVALUATION.md)،
+  [`eval/RULE_ENGINE_V7_CYCLE_REPORT.md`](../eval/RULE_ENGINE_V7_CYCLE_REPORT.md).
+- دورة V7 أنجزت: تحديد نطاق الجملة لعبارة النقل/الاقتباس، دلالة `REVIEW`
+  المحافظة للحالات السياقية، وقياس before/after لكل فئة.
+- **أهم الفجوات الموثقة** (من V7 و[`RULE_ENGINE_GAPS.md`](../eval/RULE_ENGINE_GAPS.md)):
+  1. **Hate: تغطية شبه صفرية** — القاعدة الحالية placeholder حرفي (`group`)، وأي
+     توسيع يحتاج تعريف سياسة + أهداف هوية + بيانات مراجعة مستقلة أولًا (P0 blocker).
+  2. **الإساءة بضمير الغائب** (`he's pathetic` / `هو فاشل`) — miss موثق في held-out V7.
+  3. تنوع بنى التهديد (أعضاء الجسد، صيغ لهجية) وما زالت حدودية.
+  4. تنويعات Spam في صيغ الافتتاح وسياق الجائزة.
+  5. الأخطاء الإملائية وتكرار الحروف (`idiooot`/`idot`) — مفقودة، وتحتاج تطبيعًا
+     محدودًا بميزانية false positives.
+  6. تنويعات Arabizi إضافية.
+  7. معرفات القواعد مشتقة من الموضع (`pattern-order IDs`) — تحتاج semantic IDs
+     قبل اعتمادها خارجيًا (تنظيف تقني لا سلوكي).
+
+---
+
+## المرحلة 1 — سقف محرك القواعد (الهدف الأول)
+
+**الهدف:** تعظيم precision مع تعظيم recall بقدر ما تسمح القواعد الحتمية، بدقة قابلة
+للقياس، ودون كسر حماية النقد والاختلاف المحترم وخطاب الرد والاقتباس.
+
+### منهجية كل دورة (نفس انضباط V7)
+
+1. اختر **فجوة واحدة** لها دليل فشل موثق في dev.
+2. اكتب **أمثلة dev** قبل أي كود: موجب واضح + hard negatives (نقد كود/فكرة، نفي،
+   اقتباس، نقل، لهجة، Arabizi) لكل نمط جديد.
+3. نفّذ **نمطًا ضيقًا** فقط مدعومًا بالأمثلة، مع regression test للموجب والمحمي.
+4. قيّم على dev، ثم **جمّد الكود**، ثم قيّم على held-out **دون أي ضبط عليه**.
+5. اكتب تقرير دورة في `eval/RULE_ENGINE_V{n}_*.md` بنفس صيغة V7:
+   precision/recall/F1 لكل فئة، TP/FP/TN/FN، عدّ لكل لغة، عدد الحالات الغامضة
+   غير المحسومة، وتحليل أخطاء مجمّع حسب السبب الجذري.
+6. أي تصحيح تسميات بعد أول قياس **يُفصح عنه صراحة** ولا يُعدّل التوقعات لصالح النتيجة.
+
+### دورات مخططة بالأولوية (مبنية على الأدلة، لا على تعداد كلمات)
+
+| الدورة | النطاق | الدليل | شرط القبول |
+| --- | --- | --- | --- |
+| **V8** | إساءة بضمير الغائب: `he's/she's/هو/هي + insult` مع حماية نقد الكائن/الفكرة | miss موثق `v7t-en-report-then-attack` | TP جديد في held-out بدون FP على نقد الكود/الفكرة |
+| **V9** | بنى تهديد إضافية (أفعال أعضاء الجسد، صيغ لهجية) + ضوابط نفي/نقل/اقتباس | GAPS P1 | كل نمط جديد مقابل hard negatives موثقة |
+| **V10** | صيغ افتتاح spam + قاعدة co-occurrence (جائزة + تواصل خاص) | GAPS P1 (`enta kasabt`) | بدون FP على تسويق مشروع/تبرع |
+| **V11** | تطبيع محدود للأخطاء وتكرار الحروف (idiooot/idot) مع ميزانية FP | GAPS P2 | لا FP جديد على تمطيط شرعي للكلمات |
+| **V12** | تنويعات Arabizi إضافية (صيغ `ya X` و`enta/inti + Y`) | GAPS P1 | بدون تعميم fuzzy transliteration |
+| **تقني** | semantic rule IDs بدل الموضعية | GAPS P2 | لا تغيير سلوكي؛ استقرار التشخيص والقياس |
+| **محجوبة** | Hate | placeholder `group` فقط | **لا قواعد قبل**: تعريف سياسة + taxonomy أهداف + بيانات مراجعة مستقلة |
+
+> **قاعدة:** لا تُضاف قاموسيات كلمات كبيرة دون فشل dev واضح + hard negatives +
+> regression tests. الحجم نفسه ليس هدفًا.
+
+### بوابة سقف القواعد (Rule-engine exit gate)
+
+يُعلن السقف فقط عندما تتحقق **كل** الشروط:
+
+1. **دورتان إلى ثلاث متتاليات** (مثل V8→V10) بمكسب held-out ضئيل أو صفر
+   **بدون انحدارات** — أي ثبات القياس عبر دورات متعددة، لا مجرد نجاح الاختبارات.
+2. لا يوجد نمط ضيق جديد يمكن إضافته **دون** خرق ميزانية false positives
+   على النقد/الرد المحترم/النقل/الاقتباس.
+3. الأخطاء المتبقية المجمعة حسب السبب الجذري تكون في غالبيتها **سياقية**:
+   ساخرية، معنى مستعاد، نية المتكلم، target غائب، لهجات غير مفهرسة.
+4. Hate يبقى خارج ادعاء السقف (محجوب بسياسة/بيانات، وليس فشلًا للقواعد بحد ذاتها).
+
+---
+
+## المرحلة 2 — الطبقة الهجينة (سياقية فوق القواعد)
+
+**تبدأ فقط بعد** تحقق بوابة سقف القواعد **وجاهزية بيانات مستقلة** (بوابة V7 الحالية).
+
+- **البنية:** القواعد تعطي `HIDE` (ثقة عالية) / `REVIEW` (إشارة سياقية) / `ALLOW`.
+  الطبقة السياقية تعمل على `REVIEW` والحالات الغامضة **فقط في البداية** — أأمن
+  نقطة دخول ولا تغيّر سلوك `HIDE` القائم.
+- **البيانات:** تجميع مستقل (مراجعان أعميان + تحكيم ثالث) بشرائح:
+  `attack` / `counterspeech` / `reporting` / `satire` / `quotation`، عربي مصري
+  + فصحى + English + Arabizi، مع موافقات الاستخدام.
+- **معيار الجودة الإضافي (منتج):** **FP-harm لكل نوع خطاب** — كم من الظالمين
+  للفلتر هم من يشتكون من الإساءة أو يردون بخطاب مضاد. هذا هدف جودة منتج
+  (تقليل إسكات المتحدثين المحترمين)، مأخوذ من الزاوية الموثقة في
+  [`EXTERNAL_REVIEW_ANALYSIS.md`](EXTERNAL_REVIEW_ANALYSIS.md) دون أي إطار أكاديمي.
+- **التنفيذ:** on-device أولًا إن أمكن؛ وإلا API اختياري بموافقة صريحة مع
+  حد أقصى للطول وخصوصية موثقة (`CLASSIFIER_OPTIONS.md`).
+
+---
+
+## المرحلة 3 — تمكين المنتج والتحقق الحي
+
+- **تحقق حي على Facebook** عبر ملف Brave المخصص + `extension/smoke/lab.py`
+  + التشخيصات الموجودة (`candidate`/`decision`/`hide-failed`) — والتوثيق في
+  `RULE_ENGINE_V6_FACEBOOK_REGRESSION.md` يظل مرجع المفارقات الحية.
+- **إصدار RC → Stable:** الحزمة local-only الحالية (`verify-dist` inventory) +
+  `package-release.py` + تدقيق الملكية والترخيص (`OWNERSHIP_AND_LICENSING_AUDIT.md`)
+  + تحديث `THREAT_MODEL`/`PRIVACY` مع كل تغيير سلوكي.
+- **إكمال عناصر القاعدة القديمة غير المنجزة:** popup accessibility، لوحة المفاتيح،
+  navigation، وسهولة restore — تُدمج هنا بعد استقرار دقة القواعد.
+
+---
+
+## قواعد التشغيل الثابتة (من انضباط `eval/`)
+
+- لا تعديل قاعدة إلا بفشل dev واضح + نمط ضيق + hard negatives + regression test.
+- **ممنوع ضبط أي شيء على held-out** — أي إشارة من test تُسجل كفجوة لدورة قادمة.
+- V1–V7 مجمّدة؛ لا تُعدّل أصولها أبدًا.
+- كل دورة تنتج تقريرًا بمقاييسها الكاملة (حتى الأرقام السيئة) في `eval/`.
+- التشخيصات تبقى بلا نصوص أو أسماء أو URLs — أرقام وأسباب فقط.
+
+---
+
+## الخطوات الفورية القادمة
+
+1. **تثبيت الشجرة الحالية:** الشجرة خضراء (399 اختبارًا، tsc، build) — تُرحّل
+   أعمال V7/البنية local-only كما هي قبل بدء أي دورة جديدة.
+2. **بدء دورة V8:** كتابة أمثلة dev للإساءة بضمير الغائب + hard negatives نقد
+   الكائن/الفكرة **قبل** أي تعديل كود، في ملف `eval/rule-engine-v8-dev.json`
+   مع `RULE_ENGINE_V8_PLAN.md`.
+3. عند اكتمال V8: تقييم held-out ثم تقرير الدورة، ثم تقرر V9 بناءً على النتائج —
+   لا يُتخذ قرار الدورة التالية قبل قراءة تحليل أخطائها.
