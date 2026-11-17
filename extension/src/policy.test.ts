@@ -366,3 +366,45 @@ describe("normalization contract for rule authors", () => {
     expect(normalizeForRules("سوف\u200B أقتلك")).toBe("سوف اقتلك");
   });
 });
+
+describe("V8 third-person authored abuse", () => {
+  it.each([
+    "He's pathetic.",
+    "She is such a moron.",
+    "He's a total clown.",
+    "I told him he's an idiot.",
+    "She said the presentation was weak. He's an idiot.",
+    "هو غبي.",
+    "هي فاشلة في شغلها.",
+    "وهو اهبل كمان."
+  ])("hides third-person authored personal abuse: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "His code is pathetic.",
+    "The design he's proposing is stupid.",
+    "She thinks he's an idiot.",
+    "He believes she's a moron.",
+    "الكود اللي كتبه فاشل.",
+    "هي متحمسة بس المشروع فاشل.",
+    "هو مش غبي، بس بيهرب من المسؤولية.",
+    "Her design is a joke.",
+    "He is the manager and she is the engineer.",
+    "He's hopeless at presentations."
+  ])("keeps object, idea, attributed, negated, and factual third-person text visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+
+  it("keeps first-person cognition authored while hiding its insult", () => {
+    const result = classifyLocally("I think you're an idiot.");
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, DEFAULT_SETTINGS)).toBe(true);
+  });
+
+  it("keeps first-person cognition about a third person visible", () => {
+    expect(classifyLocally("I believe he is a good teammate.").labels).toEqual([]);
+  });
+});

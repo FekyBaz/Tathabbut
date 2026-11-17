@@ -87,7 +87,11 @@ const REPORTING_CUE = new RegExp(
   "|\\b(?:post|comment|article|message|text|quote)\\s+(?:says|said|reads|read|contains|contained|uses|used)\\b" +
   "|\\b(?:said|says|told|tells|called|calls|wrote|writes|posted|posts|texted|texts|quoted|quotes)\\s+(?:me|him|her|them|us)\\b" +
   "|(?:نقل\\s+عنه\\s+قوله|نقلت\\s+عنه\\s+قولها|قال\\s+لي|قالت\\s+لي|قال|قالت|كتب|كتبت|وصف|يقال|مثال|كلمة|شتيمة|اهانة|مقال|منشور|تعليق|لغة)" +
-  "|\\b(?:howa|heya|homma)\\s+(?:2al|2alet|katab|katbet)\\b",
+  "|\\b(?:howa|heya|homma)\\s+(?:2al|2alet|katab|katbet)\\b" +
+  // Third-person cognition attribution (V8): "She thinks he's an idiot" is
+  // reported opinion, not an authored attack. First-person cognition ("I think
+  // you're an idiot") stays authored because the pronouns exclude I/we.
+  "|\\b(?:he|she|they)\\s+(?:thinks?|believes?|claims?)\\b",
   "i"
 );
 
@@ -146,7 +150,11 @@ function classificationText(normalized: string): string {
     " "
   );
   if (QUOTE_META_CUE.test(text)) {
-    text = text.replace(QUOTED_SEGMENT, " ");
+    // Preserve a sentence boundary when a quoted segment ends with terminal
+    // punctuation: eating the period would merge the reported sentence with a
+    // later authored sentence and let the report cue suppress both (V8 fix).
+    text = text.replace(QUOTED_SEGMENT, (segment) =>
+      /[.!?؟]\s*['""«»]\s*$/.test(segment) ? " ." : " ");
   } else {
     // Quotes used for emphasis around a direct insult: You are an "idiot".
     text = text.replace(/["“”«»]/g, " ");
@@ -198,7 +206,13 @@ const patterns: Record<Category, RegExp[]> = {
     /\bya\s+(?:7mar|7omar|hamar)\b/i,
     /\bya\s+ahbal\b/i,
     // New, reviewed Egyptian Arabic vocative and explicit second-person insult.
-    ...EGYPTIAN_ARABIC_PERSONAL_ABUSE_PATTERNS
+    ...EGYPTIAN_ARABIC_PERSONAL_ABUSE_PATTERNS,
+    // V8 third-person authored abuse: the pronoun supplies the personal target
+    // exactly as the second-person forms above do. The insult must follow the
+    // pronoun directly (intensifiers allowed), so object/idea criticism,
+    // possessive subjects, and negation stay protected.
+    /\b(?:he(?:'s| is)|she(?:'s| is))\s+(?:(?:such\s+(?:a|an)\s+)|(?:(?:a|an)\s+)?(?:complete|total)\s+|(?:(?:a|an)\s+)?)?(?:idiot|moron|loser|stupid|dumb|worthless|pathetic|clown|asshole|bastard|piece of (?:shit|trash)|waste of space)\b/i,
+    /(?:^|[\s،,.!?؟])(?:و)?(?:هو|هي)\s+(?:غبي[هة]?|اهبل|هبل[هة]?|حمار|فاشل[هة]?|تافه[هة]?|حقير[هة]?|جاهل[هة]?|كلب[هة]?|حيوان[هة]?|بهيم[هة]?|قذر[هة]?|وسخ[هة]?|زبال[هة]?)(?=$|[\s،,.!?؟])/u
   ],
   hate: [
     /\b(?:all|every) (?:members of )?(?:group) are (?:vermin|subhuman)\b/i
