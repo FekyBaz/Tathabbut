@@ -33,8 +33,8 @@ describe("locale dictionaries", () => {
   });
 
   it("keeps technical endpoint paths identical across languages", () => {
-    expect(t("ar").apiHint).toContain("/v1/classify");
-    expect(t("en").apiHint).toContain("/v1/classify");
+    expect(t("ar").statusLegacyApiRemoved).toContain("محليًا فقط");
+    expect(t("en").statusLegacyApiRemoved).toContain("locally only");
   });
 });
 

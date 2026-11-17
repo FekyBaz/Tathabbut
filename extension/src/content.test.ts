@@ -257,22 +257,16 @@ describe("narrow hide targets (parent-container false positive)", () => {
     await vi.waitFor(() => expect(isHidden(article)).toBe(true));
   });
 
-  it("keeps unit-level hiding for remote verdicts without a local match", async () => {
-    storedSettings = { ...DEFAULT_SETTINGS, apiUrl: "https://api.example.com" };
+  it("classifies legacy API settings locally without fetch or remote messaging", async () => {
+    storedSettings = { ...DEFAULT_SETTINGS, apiUrl: "https://api.example.test" };
     const chromeApi = (globalThis as unknown as { chrome: { runtime: { sendMessage: ReturnType<typeof vi.fn> } } }).chrome;
-    vi.mocked(chromeApi.runtime.sendMessage).mockResolvedValue({
-      ok: true,
-      result: { labels: [{ category: "spam", score: 0.99 }], provider: "remote-test" }
-    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
     document.body.innerHTML =
-      '<div id="feed">' +
-      '<div role="article" id="remote-mix">' +
-      '<div class="post-body">A quiet afternoon reading books.</div>' +
-      '<div class="plain-reply">More quiet pages to enjoy slowly.</div>' +
-      "</div></div>";
+      '<div id="feed"><div role="article" id="legacy-api-post"><div class="post-body">You are an idiot</div></div></div>';
     await loadContentModule();
-    const article = byId("remote-mix");
-    await vi.waitFor(() => expect(isHidden(article)).toBe(true));
+    await vi.waitFor(() => expect(isHidden(byId("legacy-api-post"))).toBe(true));
+    expect(chromeApi.runtime.sendMessage).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("hides only the harassing child, not the respectful article", async () => {
@@ -886,40 +880,6 @@ describe("content lifecycle diagnostics", () => {
       expect(permanentLog?.[1]).toMatchObject({ persisted: false });
       expect(hasLifecycleEvent(seen, "dispose")).toBe(true);
       expect(changeListeners.length).toBe(0);
-    } finally {
-      restore();
-    }
-  });
-
-  it("logs a guard when classification returns after disposal and is ignored", async () => {
-    window.localStorage.setItem(LIFECYCLE_KEY, "1");
-    storedSettings = { ...DEFAULT_SETTINGS, apiUrl: "https://api.example.com" };
-    const chromeApi = (globalThis as unknown as {
-      chrome: { runtime: { sendMessage: ReturnType<typeof vi.fn> } };
-    }).chrome;
-    let release!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    vi.mocked(chromeApi.runtime.sendMessage).mockImplementation(async () => {
-      await gate;
-      return undefined;
-    });
-
-    const { seen, restore } = captureConsoleInfo();
-    try {
-      document.body.innerHTML = fixture();
-      const module = await loadContentModule();
-      await vi.waitFor(() => expect(chromeApi.runtime.sendMessage).toHaveBeenCalled());
-
-      module.dispose();
-      release();
-      await settle();
-
-      const rejected = lifecycleEvents(seen, "guard:reject").some(
-        (args) => (args[1] as { where?: string } | undefined)?.where === "classify-after-dispose"
-      );
-      expect(rejected).toBe(true);
     } finally {
       restore();
     }
@@ -2225,34 +2185,6 @@ describe("foundation audit: extraction, identity, mutations, and ambiguity", () 
     expect(document.querySelectorAll(".tathabbut-hidden, .tathabbut-notice, .tathabbut-reveal").length)
       .toBe(0);
     expect(() => mod.reveal(body)).not.toThrow();
-  });
-
-  it("ignores an in-flight result when the target is detached before classification", async () => {
-    const chromeApi = (globalThis as unknown as {
-      chrome: { runtime: { sendMessage: ReturnType<typeof vi.fn> } };
-    }).chrome;
-    let release!: (value: unknown) => void;
-    const pending = new Promise<unknown>((resolve) => { release = resolve; });
-    chromeApi.runtime.sendMessage.mockReturnValue(pending);
-    storedSettings = { ...DEFAULT_SETTINGS, apiUrl: "https://api.example.test" };
-    document.body.innerHTML =
-      '<div role="article" id="audit-inflight-post">' +
-        '<div class="post-body">You are an idiot</div>' +
-      "</div>";
-    await loadContentModule();
-    await vi.waitFor(() => expect(chromeApi.runtime.sendMessage).toHaveBeenCalled());
-
-    const post = byId("audit-inflight-post");
-    post.remove();
-    release({
-      ok: true,
-      result: { labels: [{ category: "harassment", score: 0.99 }], provider: "remote-test" }
-    });
-    await settle(150);
-
-    expect(isHidden(post)).toBe(false);
-    expect(document.querySelectorAll(".tathabbut-hidden, .tathabbut-notice, .tathabbut-reveal").length)
-      .toBe(0);
   });
 
   it("keeps an ambiguous mixed SSR parent visible instead of guessing a target", async () => {

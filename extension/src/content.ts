@@ -1,4 +1,4 @@
-import { CATEGORIES, DEFAULT_SETTINGS, classifyLocally, isUsableRemoteClassification, normalizeForRules, shouldHide, type Category, type Classification, type LabelScore, type UserSettings } from "./policy";
+import { CATEGORIES, DEFAULT_SETTINGS, classifyLocally, decidePolicy, normalizeForRules, shouldHide, type Category, type Classification, type UserSettings } from "./policy";
 import { DEBUG_FLAG_KEY, STATUS_KEY, type ContentStatus } from "./diagnostics";
 import { pickLanguage, t } from "./i18n";
 import { BoundedTaskQueue, fingerprintText, normalizeText } from "./text-engine";
@@ -170,7 +170,6 @@ function currentStatus(): ContentStatus {
     enabled: settings.enabled,
     threshold: settings.threshold,
     categories: settings.enabledCategories.length,
-    apiMode: settings.apiUrl ? "remote" : "local",
     articlesFound: stats.articlesFound,
     evaluated: stats.evaluated,
     classified: stats.classified,
@@ -639,29 +638,11 @@ async function classify(text: string, candidateId: string | undefined): Promise<
     candidateId,
     mode,
     labels: result.labels.slice(0, CATEGORIES.length).map(({ category, score }) => ({ category, score })),
-    localRuleIds: localResult.matches?.map(({ ruleId }) => ruleId).slice(0, 32) ?? [],
+    localRuleIds: localResult.matches.map(({ ruleId }) => ruleId).slice(0, 32),
     enabledCategories: [...settings.enabledCategories],
     threshold: settings.threshold
   });
-  if (!settings.apiUrl) {
-    debugLog("classify", classificationDetails("local", localResult));
-    return localResult;
-  }
-  try {
-    const response = await chrome.runtime.sendMessage({
-      type: "tathabbut:classify-remote",
-      apiUrl: settings.apiUrl,
-      text,
-      enabledCategories: settings.enabledCategories
-    }) as { ok?: boolean; result?: unknown } | undefined;
-    if (response?.ok && isUsableRemoteClassification(response.result)) {
-      debugLog("classify", classificationDetails("remote", response.result));
-      return response.result;
-    }
-  } catch {
-    // Missing permission, unavailable service worker, or API failure uses local rules.
-  }
-  debugLog("classify", classificationDetails("remote-fallback-local", localResult));
+  debugLog("classify", classificationDetails("local", localResult));
   return localResult;
 }
 function wrapDirectTextNodes(element: Element): void {
@@ -742,46 +723,28 @@ function revealFromButton(owner: Element, target: Element): void {
 }
 
 interface Decision {
-  hidden: boolean;
+  action: "ALLOW" | "HIDE" | "REVIEW";
   reason: string;
   category?: Category;
-  score?: number;
+  ruleIds: string[];
 }
 
-// Mirrors shouldHide but explains WHY, for diagnostics only.
-// Precedence: an actual hide beats a near-miss; a near-miss (rule matched
-// but score below threshold) beats a disabled category; otherwise no match.
+// Keep diagnostics aligned with the policy action used by shouldHide.
 function describeDecision(result: Classification): Decision {
-  if (!settings.enabled) return { hidden: false, reason: "filter-disabled" };
-  let weak: LabelScore | undefined;
-  let off: Category | undefined;
-  for (const label of result.labels) {
-    if (!CATEGORIES.includes(label.category)) continue;
-    if (!settings.enabledCategories.includes(label.category)) {
-      off ??= label.category;
-      continue;
-    }
-    if (!Number.isFinite(label.score) || label.score < 0 || label.score > 1) continue;
-    if (label.score >= settings.threshold) {
-      return { hidden: true, reason: "rule-match", category: label.category, score: label.score };
-    }
-    weak ??= label;
-  }
-  if (weak !== undefined) {
-    return { hidden: false, reason: "below-threshold", category: weak.category, score: weak.score };
-  }
-  if (off !== undefined) return { hidden: false, reason: "category-disabled", category: off };
-  return { hidden: false, reason: "no-rule-match" };
+  const policy = decidePolicy(result, settings);
+  return { action: policy.action, reason: policy.reason, category: policy.categories[0], ruleIds: policy.ruleIds };
 }
 
 function categoryDecisionSummary(result: Classification): Array<Record<string, unknown>> {
   return CATEGORIES.map((category) => {
     const label = result.labels.find((item) => item.category === category);
     const enabled = settings.enabledCategories.includes(category);
+    const matches = result.matches?.filter((item) => item.category === category) ?? [];
     return { category, matched: label !== undefined, score: label?.score ?? null, enabled,
       threshold: settings.threshold,
       hide: settings.enabled && enabled && label !== undefined &&
-        Number.isFinite(label.score) && label.score >= settings.threshold };
+        decidePolicy({ ...result, labels: [label] }, settings).action === "HIDE",
+      specificity: matches.map((item) => item.specificity), ruleIds: matches.map((item) => item.ruleId) };
   });
 }
 
@@ -790,7 +753,7 @@ function categoryDecisionSummary(result: Classification): Array<Record<string, u
  * hide decision: the single matching child block when the unit holds
  * several sibling blocks and exactly one of them independently hides,
  * otherwise the unit itself. Multi-match units, single-block units, and
- * remote verdicts without a local explanation all keep unit-level hiding.
+ * Any local high-specificity match keeps unit-level hiding.
  */
 function narrowTarget(element: Element): Element {
   if (!shouldHide(classifyLocally(textForUnit(element)), settings)) return element;
@@ -817,12 +780,12 @@ export function applyResult(element: Element, result: Classification, candidateI
   const decision = describeDecision(result);
   const via = unitSource.get(element) ?? "unknown";
   const kind = unitKind(element);
-  if (!decision.hidden) {
+  if (decision.action !== "HIDE") {
     reveal(element, "classification-show");
     stats.shown += 1;
     if (decision.reason === "no-rule-match") stats.noRuleMatch += 1;
     const details: Record<string, unknown> = {
-      decision: "shown",
+      decision: decision.action === "REVIEW" ? "review" : "shown",
       reason: decision.reason,
       candidateId,
       via,
@@ -832,7 +795,7 @@ export function applyResult(element: Element, result: Classification, candidateI
     stats.lastReason = decision.reason;
     void persistStatus(false);
     if (decision.category !== undefined) details.category = decision.category;
-    if (decision.score !== undefined) details.score = decision.score;
+    if (decision.ruleIds.length) details.ruleIds = decision.ruleIds;
     debugLog("decision", details);
     reportProgress();
     return;
@@ -841,7 +804,7 @@ export function applyResult(element: Element, result: Classification, candidateI
   // ancestor: a harassing reply must not take respectful siblings with it.
   // Single-block units keep unit-level hiding (no pointless reparenting).
   // Nested comment/article units manage themselves and are never absorbed.
-  // Remote verdicts without a local explanation keep unit-level hiding.
+      // Local results without a rule explanation cannot be treated as evidence.
   const target = narrowTarget(element);
   const manualReveal = manualReveals.get(target);
   if (manualReveal !== undefined) {
@@ -932,7 +895,7 @@ export function applyResult(element: Element, result: Classification, candidateI
     narrowed: target !== element,
     reason: decision.reason,
     category: decision.category,
-    score: decision.score,
+    ruleIds: decision.ruleIds,
     candidateId,
     categoryDecisions: categoryDecisionSummary(result),
     via,
@@ -1133,7 +1096,6 @@ async function loadSettings(): Promise<void> {
           : [...DEFAULT_SETTINGS.enabledCategories],
         threshold: typeof candidate.threshold === "number" && candidate.threshold >= 0 && candidate.threshold <= 1
           ? candidate.threshold : DEFAULT_SETTINGS.threshold,
-        apiUrl: typeof candidate.apiUrl === "string" ? candidate.apiUrl.trim() : "",
         language: pickLanguage(candidate.language)
       };
     } else {
@@ -1162,7 +1124,7 @@ async function loadSettings(): Promise<void> {
     enabled: settings.enabled,
     enabledCategories: [...settings.enabledCategories],
     threshold: settings.threshold,
-    mode: settings.apiUrl ? "remote" : "local"
+    mode: "local"
   });
   document.querySelectorAll("." + HIDDEN_CLASS).forEach((element) => reveal(element, "settings-change"));
   scan();

@@ -1,117 +1,35 @@
-# Manual live-Facebook test procedure
+# Manual validation checklist
 
-Automated checks cannot reproduce Facebook's live DOM, login state, or feed
-behavior. Use this procedure with a dedicated test profile before any beta
-or public claim.
+Automated checks cannot reproduce Facebook's live DOM, a logged-in profile, browser extension permissions, or long-session behavior. Record the exact artifact checksum and browser versions for any manual run. Never include real post text, author names, or profile links in the report.
 
-## Setup
+## Install and inspect
 
-- Browser: Chrome (record the exact version from `chrome://version`).
-- Extension: fresh `npm run build` artifact from the branch under test.
-  Open `chrome://extensions/`, enable Developer mode, remove any older
-  copy of Tathabbut, then Load unpacked and select the `extension/dist`
-  directory. Confirm the install shows no errors.
-- Confirm the installed copy matches the reviewed commit (compare the
-  popup Diagnostics behavior and the `dist/content.js` build date).
-- Page: `https://www.facebook.com/` logged into the test profile.
-- Popup: filtering enabled, all four categories on, threshold **85%**.
+- [ ] Install the extracted package in Chrome from `chrome://extensions/`.
+- [ ] Install the same package in Brave from `brave://extensions/`.
+- [ ] Enable Tathabbut and confirm the browser reports no manifest or script errors.
+- [ ] Confirm the popup has no API URL or remote classification controls.
+- [ ] Confirm the installed package manifest has only `storage` and Facebook host access; no optional origins or background service worker.
+- [ ] Confirm default filtering is on, all four categories are selected, and the threshold is 85%.
 
-## First gate: diagnose zero discovered content
+## Local filtering behavior
 
-If the popup reports `articles found = 0`, do not start tuning the classifier:
-the text engine cannot classify units it never discovers.
+Use self-authored or otherwise consent-safe examples only.
 
-1. Open DevTools Console on the Facebook tab and enable diagnostic mode in
-   the popup. Check whether `[Tathabbut debug] loaded` appears.
-2. Run this **counts-only** probe in the page console. It prints selector
-   counts, not post text, author names, or URLs:
+- [ ] Confirm a benign neutral item stays visible (ALLOW).
+- [ ] Confirm one documented high-specificity harassment example is hidden (HIDE).
+- [ ] Confirm an ambiguous contextual example stays visible for review (REVIEW).
+- [ ] Reveal a hidden item and confirm its text is restored.
+- [ ] Change settings and confirm content is re-evaluated.
+- [ ] Restart the browser and confirm preferences persist.
+- [ ] Enable diagnostics and confirm status updates; disable diagnostics afterwards.
+- [ ] Observe a long feed for responsiveness, memory growth, and queue backpressure.
+- [ ] Inspect the page console for errors and confirm no Tathabbut network request sends extracted content.
+- [ ] Confirm the old API URL setting is removed on first popup open after upgrading; note any permission cleanup warning.
 
-   ```js
-   (() => {
-     const selectors = [
-       '[role="article"]',
-       '[role="comment"]',
-       '[data-testid="comment" i]',
-       '[data-testid^="comment-" i]',
-       '.comment',
-       'p',
-       'blockquote',
-       'li',
-       '[role="feed"]',
-       'main'
-     ];
-     return Object.fromEntries(selectors.map(selector => [
-       selector,
-       document.querySelectorAll(selector).length
-     ]));
-   })()
-   ```
+## Platform coverage record
 
-3. Check whether the page is still loading, whether the feed is empty, and
-   whether the extension is enabled for the current Facebook host. Repeat
-   the counts after the feed visibly finishes loading.
-4. If `[role="article"]` is zero but other candidates are present, do **not**
-   assume each candidate is a post or comment. Inspect only the structure
-   and attributes of one self-authored test item, then add a narrow selector
-   and a fixture for it. Avoid broad selectors that could classify navigation,
-   sidebars, or the entire comments container as one content unit.
-5. If all candidate counts are zero but content is visibly present, record
-   only the counts above, hostname, browser version, extension commit, and
-   popup status fields. Do not copy page HTML or post content into a report.
+For each browser, record PASS / FAIL / NOT TESTED for install, popup, local filtering, reveal, settings persistence, long-feed behavior, console errors, and service-worker errors (the local package should not have a service worker). A successful synthetic fixture run is not live Facebook validation. Do not claim Facebook compatibility unless the relevant checks were performed against a real logged-in test profile.
 
-## Scenarios
+## Development-only lifecycle diagnostics
 
-1. **Injection check.** Open DevTools Console on the feed. With diagnostic
-   mode on (popup checkbox), expect `[Tathabbut debug] loaded`. Record
-   whether it appears.
-2. **Control positive.** If the feed has no matching content, create a
-   self-authored test post visible only to you with a known control phrase
-   that matches a documented starter rule, reload, and confirm the item is
-   hidden with a reveal control.
-3. **Control negative.** Confirm a respectful disagreement or neutral post
-   stays visible.
-4. **Reveal.** Click the reveal control and confirm the content is restored.
-5. **Dynamic feed.** Scroll to load more items and confirm newly inserted
-   items are processed without a page reload.
-6. **Edited text.** Edit a test post and confirm it is re-evaluated.
-7. **Settings.** Change the threshold to 99% and confirm stock-rule items
-   stop hiding (higher means stricter); restore 85% afterwards.
-8. **Popup status.** Open the popup, press Refresh status, and record
-   articles found, evaluated/classified/hidden, last outcome, and freshness.
-9. **Comments.** Record which semantic attributes the self-authored test
-   comments use; standalone comments without a supported unit selector may
-   be skipped until a verified fixture-backed selector is added.
-
-## Controlled live check (short version)
-
-Use one self-authored test post visible only to you with four self-authored
-comments, threshold **85%**, all categories on. Record only counts and
-outcome codes — never paste real post text, names, or links into any report.
-
-Expected starter-rule outcomes (current narrow rules, by design):
-
-- `I will kill you.` → hidden (threats).
-- `You are an idiot.` → hidden (harassment).
-- `FREE FREE FREE CLICK NOW CLICK NOW CLICK NOW` → stays visible
-  (matches no starter spam rule; shouty promo text is deliberately not
-  covered to avoid punishing ordinary posts).
-- `I respectfully disagree with your opinion.` → stays visible.
-- `ملكش لازمة` → hidden (bare Egyptian put-down, no pronoun needed).
-
-Then, in order: add one more matching comment while the page is open
-(dynamic insert), edit one hidden comment to neutral text and confirm it
-is restored, click a reveal control and confirm restore, switch to 99%
-and confirm stock-rule items stop hiding, switch back to 85%, refresh,
-and open the same feed in a second tab (each tab overwrites the shared
-status key — compare `updatedAt` freshness, not just counts).
-
-Report template per step: `visible|hidden`, popup
-`articles/evaluated/classified/hidden/skipped`, `lastReason`, and whether
-the snapshot was fresh. That is all that is needed — no content.
-
-## Recording results
-
-For each scenario record: expected result, actual result, diagnostic
-evidence (status panel values or debug lines), browser/extension versions,
-and the feed type (home feed, group, page). Any mismatch is a bug report
-with these fields attached.
+To inspect observer/listener disposal, the opt-in `tathabbutLifecycleDebug` local-storage flag can be enabled on the Facebook origin. This is a developer diagnostic, not proof of browser back/forward-cache behavior. It logs lifecycle metadata, not post text. The flag can be removed from the page's local storage after the check.

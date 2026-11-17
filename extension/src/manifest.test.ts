@@ -33,6 +33,14 @@ function hostPermissions(): string[] {
 }
 
 describe("manifest host scope", () => {
+  it("uses only local-operation permissions and has no remote worker or optional origins", () => {
+    expect((manifest as { permissions?: string[] }).permissions).toEqual(["storage"]);
+    expect((manifest as { optional_host_permissions?: string[] }).optional_host_permissions).toBeUndefined();
+    expect((manifest as { optional_permissions?: string[] }).optional_permissions).toBeUndefined();
+    expect((manifest as { background?: unknown }).background).toBeUndefined();
+    expect(hostPermissions().sort()).toEqual(["https://*.facebook.com/*", "https://facebook.com/*"].sort());
+  });
+
   it("stays https-only with no broad patterns", () => {
     for (const pattern of [...contentMatches(), ...hostPermissions()]) {
       expect(pattern.startsWith("https://")).toBe(true);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CATEGORIES, DEFAULT_SETTINGS, classifyLocally, shouldHide, type Category } from "./policy";
+import { CATEGORIES, classifyLocally, type Category } from "./policy";
 import dataset from "../../eval/dataset.json";
 
 interface DatasetItem {
@@ -12,13 +12,11 @@ interface DatasetItem {
 }
 
 const items = (dataset as { version: string; items: DatasetItem[] }).items;
-const SETTINGS = { ...DEFAULT_SETTINGS, enabledCategories: [...CATEGORIES] };
-
 function predictedCategories(text: string): Category[] {
   const result = classifyLocally(text);
-  return CATEGORIES.filter((category) =>
-    shouldHide({ labels: result.labels.filter((label) => label.category === category), provider: result.provider }, SETTINGS)
-  );
+  // This corpus evaluates category detection. HIDE versus REVIEW is a separate
+  // policy decision and contextual rules are intentionally allowed to abstain.
+  return CATEGORIES.filter((category) => result.labels.some((label) => label.category === category));
 }
 
 describe("labeled evaluation", () => {

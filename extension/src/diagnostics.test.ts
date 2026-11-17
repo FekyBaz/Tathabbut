@@ -16,7 +16,6 @@ function sampleStatus(overrides: Partial<ContentStatus> = {}): ContentStatus {
     enabled: true,
     threshold: 0.85,
     categories: 4,
-    apiMode: "local",
     articlesFound: 3,
     evaluated: 3,
     classified: 3,
@@ -79,6 +78,8 @@ describe("diagnostics helpers", () => {
   it("explains reasons in Arabic", () => {
     expect(describeReason("rule-match", "ar")).toBe("طابقت قاعدة وأُخفي العنصر.");
     expect(describeReason("below-threshold", "ar")).toContain("العتبة");
+    expect(describeReason("contextual-rule-match", "en")).toContain("visible for review");
+    expect(describeReason("contextual-rule-match", "ar")).toContain("ظاهرًا للمراجعة");
     expect(describeReason("something-new", "ar")).toBe("something-new");
   });
 

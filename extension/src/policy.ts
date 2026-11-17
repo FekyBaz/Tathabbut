@@ -4,6 +4,8 @@ import { EGYPTIAN_ARABIC_PERSONAL_ABUSE_PATTERNS } from "./egyptian-arabic-abuse
 export const CATEGORIES = ["harassment", "hate", "threats", "spam"] as const;
 
 export type Category = (typeof CATEGORIES)[number];
+export type PolicyAction = "ALLOW" | "HIDE" | "REVIEW";
+export type RuleSpecificity = "high" | "contextual";
 
 export interface LabelScore {
   category: Category;
@@ -12,21 +14,28 @@ export interface LabelScore {
 
 export interface Classification {
   labels: LabelScore[];
-  provider: string;
-  matches?: RuleMatch[];
+  provider: "local-heuristic";
+  matches: RuleMatch[];
 }
 
 export interface RuleMatch {
   category: Category;
   ruleId: string;
   reason: string;
+  specificity: RuleSpecificity;
+}
+
+export interface PolicyDecision {
+  action: PolicyAction;
+  reason: string;
+  categories: Category[];
+  ruleIds: string[];
 }
 
 export interface UserSettings {
   enabled: boolean;
   enabledCategories: Category[];
   threshold: number;
-  apiUrl: string;
   language: Language;
 }
 
@@ -34,8 +43,24 @@ export const DEFAULT_SETTINGS: UserSettings = {
   enabled: true,
   enabledCategories: ["harassment", "hate", "threats", "spam"],
   threshold: 0.85,
-  apiUrl: "",
   language: DEFAULT_LANGUAGE
+};
+
+// This preserves the legacy score/threshold API. Local constants are rule
+// routing values, not calibrated probabilities. Specificity controls whether
+// evidence may auto-hide or must abstain to REVIEW.
+const CONTEXTUAL_RULE_IDS: ReadonlySet<string> = new Set([
+  "harassment.14", // sarcasm/mockery without an explicit addressee
+  "hate.1",        // placeholder word "group" does not identify an identity
+  "spam.1",        // a generic phrase can also occur in legitimate promotion
+  "spam.3"         // a prize phrase alone lacks solicitation/deception context
+]);
+
+const CONTEXTUAL_RULE_REASONS: Readonly<Record<string, string>> = {
+  "harassment.14": "Mockery phrase is context-dependent and has no explicit target.",
+  "hate.1": "The literal group placeholder does not identify a protected group.",
+  "spam.1": "Generic promotion wording lacks enough evidence for automatic spam hiding.",
+  "spam.3": "Prize wording alone does not establish deceptive or unsolicited solicitation."
 };
 
 export function normalizeForRules(text: string): string {
@@ -97,6 +122,20 @@ function isOnlyQuotedText(text: string): boolean {
   return text.replace(QUOTED_SEGMENT, "").replace(/[\s،,.!?؟"'“”«»]/g, "") === "";
 }
 
+function removeSentenceLocalCues(text: string, cuePattern: RegExp): string {
+  return text.split(/(?<=[.!?؟\n])/u).map((sentence) => {
+    const cue = cuePattern.exec(sentence);
+    cuePattern.lastIndex = 0;
+    if (!cue) return sentence;
+    // A first-person author clause such as "I told him you're pathetic" is
+    // authored speech, not third-party reporting. Do not truncate it at the
+    // embedded reporting verb; the target-specific rules can assess the rest.
+    const lead = sentence.slice(0, cue.index);
+    if (/(?:^|\bthen\s+)i\s*$/i.test(lead) || /(?:^|\s)(?:انا|احنا)\s*$/u.test(lead)) return sentence;
+    return lead;
+  }).join(" ");
+}
+
 function classificationText(normalized: string): string {
   if (isOnlyQuotedText(normalized)) return "";
   let text = normalized;
@@ -116,12 +155,13 @@ function classificationText(normalized: string): string {
   if (discussion) {
     text = text.slice(0, discussion.index) + " " + text.slice(discussion.index + discussion[0].length);
   }
-  const cue = REPORTING_CUE.exec(text);
-  if (cue) return text.slice(0, cue.index);
+  // Attribution suppresses only the sentence it governs. A report earlier in
+  // a multi-sentence comment must not erase a later authored attack.
+  text = removeSentenceLocalCues(text, REPORTING_CUE);
   // A narrow reported joke/performance cue protects quoted threats without
   // suppressing direct statements that merely discuss a play or comedy.
-  const bodyThreatReport = /\b(?:he|she|they|someone)\s+(?:joked|jokes|quipped)\b(?=[^.!?؟]{0,100}["“”«»'][^.!?؟]{0,100}\b(?:break|smash)\s+(?:your|his|her|their)\s+(?:jaw|nose|arm|leg|hand|finger|neck|ribs)\b)/i.exec(text);
-  return bodyThreatReport ? text.slice(0, bodyThreatReport.index) : text;
+  const bodyThreatReport = /\b(?:he|she|they|someone)\s+(?:joked|jokes|quipped)\b(?=[^.!?؟]{0,100}["“”«»'][^.!?؟]{0,100}\b(?:break|smash)\s+(?:your|his|her|their)\s+(?:jaw|nose|arm|leg|hand|finger|neck|ribs)\b)/i;
+  return removeSentenceLocalCues(text, bodyThreatReport);
 }
 
 const patterns: Record<Category, RegExp[]> = {
@@ -203,47 +243,71 @@ export function classifyLocally(text: string): Classification {
       " "
     ).replace(/\b(?:ana\s+)?(?:mesh|msh)\s+(?:ha2telek|hadrabak|haksarak)\b/gi, " ");
     const matchText = category === "threats" ? threatText : ruleText;
-    const categoryMatches = patterns[category]
-      .map((pattern, index) => ({ pattern, index }))
-      .filter(({ pattern }) => pattern.test(matchText));
-    for (const { index } of categoryMatches) {
+    let categoryMatched = false;
+    for (let index = 0; index < patterns[category].length; index += 1) {
+      const pattern = patterns[category][index];
+      if (!pattern.test(matchText)) continue;
       // IDs follow pattern order within each category; append new patterns to
       // preserve existing IDs and keep them useful in diagnostics/evaluation.
-      matches.push({ category, ruleId: `${category}.${index + 1}`, reason: reasons[category] });
+      const ruleId = `${category}.${index + 1}`;
+      const hasExplicitArabicAddressee = category === "harassment" && ruleId === "harassment.14" &&
+        /(?:^|[\s،,.!?؟])(?:انت|انتي|انتوا|انتم)\s+/u.test(matchText);
+      const hasPrizeAndPrivateSolicitation = category === "spam" && ruleId === "spam.1" &&
+        /\b(?:prize|reward|won)\b|جائزة|الجائزة|مبروك\s+كسبت/iu.test(matchText) &&
+        /\b(?:dm|message)\s+me\b|ابعتلي\s+(?:خاص|رسالة\s+خاصة)/iu.test(matchText);
+      const specificity: RuleSpecificity = CONTEXTUAL_RULE_IDS.has(ruleId) &&
+        !hasExplicitArabicAddressee && !hasPrizeAndPrivateSolicitation
+        ? "contextual" : "high";
+      matches.push({ category, ruleId, specificity,
+        reason: CONTEXTUAL_RULE_REASONS[ruleId] ?? reasons[category] });
+      categoryMatched = true;
     }
-    if (categoryMatches.length > 0) {
-      labels.push({ category, score: category === "threats" ? 0.90 : 0.86 });
-    }
+    if (categoryMatched) labels.push({ category, score: category === "threats" ? 0.90 : 0.86 });
   }
 
   return { labels, provider: "local-heuristic", matches };
 }
 
-export function shouldHide(result: Classification, settings: UserSettings): boolean {
-  if (!settings.enabled) return false;
-  if (!Number.isFinite(settings.threshold) || settings.threshold < 0 || settings.threshold > 1) return false;
-  return result.labels.some((label) =>
-    CATEGORIES.includes(label.category) &&
-    settings.enabledCategories.includes(label.category) &&
-    Number.isFinite(label.score) &&
-    label.score >= 0 &&
-    label.score <= 1 &&
-    label.score >= settings.threshold
-  );
+export function decidePolicy(result: Classification, settings: UserSettings): PolicyDecision {
+  // Only locally produced rule evidence is accepted by the Stable policy.
+  // This rejects legacy or externally supplied classifications before they
+  // can affect any action or diagnostic reason.
+  if (result.provider !== "local-heuristic" || !Array.isArray(result.matches)) {
+    return { action: "ALLOW", reason: "non-local-classification", categories: [], ruleIds: [] };
+  }
+  if (!settings.enabled) return { action: "ALLOW", reason: "filter-disabled", categories: [], ruleIds: [] };
+  if (!Number.isFinite(settings.threshold) || settings.threshold < 0 || settings.threshold > 1) {
+    return { action: "ALLOW", reason: "invalid-rule-threshold", categories: [], ruleIds: [] };
+  }
+
+  const valid = result.labels.filter((label) => CATEGORIES.includes(label.category) &&
+    Number.isFinite(label.score) && label.score >= 0 && label.score <= 1 &&
+    settings.enabledCategories.includes(label.category));
+  if (valid.length === 0) {
+    const disabledMatch = result.labels.some((label) => CATEGORIES.includes(label.category));
+    return { action: "ALLOW", reason: disabledMatch ? "category-disabled" : "no-rule-match", categories: [], ruleIds: [] };
+  }
+
+  const aboveThreshold = valid.filter((label) => label.score >= settings.threshold);
+  if (aboveThreshold.length === 0) {
+    return { action: "REVIEW", reason: "below-threshold",
+      categories: [...new Set(valid.map((label) => label.category))],
+      ruleIds: result.matches.map((match) => match.ruleId) };
+  }
+
+  const eligible = new Set(aboveThreshold.map((label) => label.category));
+  const evidence = result.matches.filter((match) => eligible.has(match.category));
+  const highSpecificity = evidence.filter((match) => match.specificity === "high");
+  if (highSpecificity.length > 0) {
+    return { action: "HIDE", reason: "rule-match",
+      categories: [...new Set(highSpecificity.map((match) => match.category))],
+      ruleIds: highSpecificity.map((match) => match.ruleId) };
+  }
+  return { action: "REVIEW", reason: "contextual-rule-match",
+    categories: [...new Set(evidence.map((match) => match.category))],
+    ruleIds: evidence.map((match) => match.ruleId) };
 }
 
-export function isUsableRemoteClassification(value: unknown): value is Classification {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<Classification>;
-  if (!Array.isArray(candidate.labels) || typeof candidate.provider !== "string") return false;
-  return candidate.labels.every((label) => {
-    if (!label || typeof label !== "object") return false;
-    const item = label as Partial<LabelScore>;
-    return typeof item.category === "string" &&
-      (CATEGORIES as readonly string[]).includes(item.category) &&
-      typeof item.score === "number" &&
-      Number.isFinite(item.score) &&
-      item.score >= 0 &&
-      item.score <= 1;
-  });
+export function shouldHide(result: Classification, settings: UserSettings): boolean {
+  return decidePolicy(result, settings).action === "HIDE";
 }

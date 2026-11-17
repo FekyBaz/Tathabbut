@@ -9,7 +9,6 @@ export interface ContentStatus {
   enabled: boolean;
   threshold: number;
   categories: number;
-  apiMode: "local" | "remote";
   articlesFound: number;
   evaluated: number;
   classified: number;
@@ -33,6 +32,7 @@ const REASON_TEXT_EN: Record<string, string> = {
   "rule-match": "A rule matched and the item was hidden.",
   "no-rule-match": "No rule matched the text.",
   "below-threshold": "A rule matched, but its score is under the threshold.",
+  "contextual-rule-match": "A contextual rule matched; the item stayed visible for review.",
   "category-disabled": "The matched category is switched off.",
   "filter-disabled": "Filtering is switched off.",
   "empty-text": "The item had no readable text.",
@@ -47,6 +47,7 @@ const REASON_TEXT_AR: Record<string, string> = {
   "rule-match": "طابقت قاعدة وأُخفي العنصر.",
   "no-rule-match": "لا قاعدة طابقت النص.",
   "below-threshold": "طابقت قاعدة لكن درجتها تحت العتبة.",
+  "contextual-rule-match": "طابقت قاعدة سياقية؛ تُرك المحتوى ظاهرًا للمراجعة.",
   "category-disabled": "الفئة المطابَقة مغلقة.",
   "filter-disabled": "التصفية مغلقة.",
   "empty-text": "العنصر بلا نص مقروء.",
@@ -191,8 +192,8 @@ export function statusViewModel(
     settings: snapshot.settingsOk
       ? (snapshot.enabled
         ? (lang === "ar" ? "مفعّل" : "on")
-        : (lang === "ar" ? "مغلق" : "off")) + " · " + snapshot.apiMode + " · " +
-        snapshot.categories + (lang === "ar" ? " فئات · العتبة " : " categories · threshold ") + snapshot.threshold
+        : (lang === "ar" ? "مغلق" : "off")) + " · " + snapshot.categories +
+        (lang === "ar" ? " فئات · العتبة " : " categories · threshold ") + snapshot.threshold
       : (lang === "ar" ? "الافتراضيات (تعذرت قراءة التخزين)" : "defaults (storage read failed)")
   };
 }

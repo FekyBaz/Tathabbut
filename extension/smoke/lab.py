@@ -39,7 +39,6 @@ DEFAULT_SETTINGS = {
     "enabled": True,
     "enabledCategories": ["harassment", "hate", "threats", "spam"],
     "threshold": 0.85,
-    "apiUrl": "",
 }
 
 
@@ -123,12 +122,21 @@ def main():
                 ],
             )
             try:
-                sw = ctx.service_workers[0] if ctx.service_workers else None
-                if sw is None:
-                    sw = ctx.wait_for_event("serviceworker", timeout=20000)
-                extension_id = sw.url.split("/")[2]
+                manager = ctx.new_page()
+                manager.goto("chrome://extensions/", wait_until="domcontentloaded")
+                manager.wait_for_function("""() => {
+                    const root = document.querySelector('extensions-manager')?.shadowRoot;
+                    const list = root?.querySelector('extensions-item-list')?.shadowRoot;
+                    return Boolean(list?.querySelector('extensions-item')?.id);
+                }""", timeout=20000)
+                extension_id = manager.evaluate("""() => {
+                    const root = document.querySelector('extensions-manager').shadowRoot;
+                    return root.querySelector('extensions-item-list').shadowRoot.querySelector('extensions-item').id;
+                }""")
                 report["extensionId"] = extension_id
-                check("sw-running", "injection", True, True, sw.url)
+                control = ctx.new_page()
+                control.goto("chrome-extension://" + extension_id + "/popup.html")
+                check("local-extension-page", "injection", True, True, "popup control page; no service worker")
 
                 for host in hosts:
                     tag = host.split("/")[2]
@@ -159,7 +167,7 @@ def main():
                     def read_status():
                         import json as _json
 
-                        raw = sw.evaluate(
+                        raw = control.evaluate(
                             "chrome.storage.local.get('tathabbutStatus')"
                             ".then(r => JSON.stringify(r))"
                         )
@@ -195,7 +203,7 @@ def main():
                     page.wait_for_timeout(1500)
 
                     expected_hidden = ["en-harass", "ar-harass", "ar-belittle", "en-threat", "en-spam",
-                                       "ar-spam", "norm-diacritics", "dup-a", "dup-b",
+                                       "norm-diacritics", "dup-a", "dup-b",
                                        "nested-parent-comment", "nested-threat-ar-comment",
                                        "standalone-comment", "standalone-threat", "standalone-threat-ar",
                                        "standalone-paragraph", "fb-comment-nested-child",
@@ -206,15 +214,14 @@ def main():
                         if got:
                             check("single-control-" + eid + "-" + tag, "hide", 1, buttons(eid))
                     for eid in ["neutral-en", "respect-en", "respect-ar", "long-mixed",
-                                "spam-benign", "empty-article", "editable",
+                                "spam-benign", "ar-spam", "empty-article", "editable",
                                 "nested-parent", "nested-threat-ar", "counter-article",
                                 "quote-parent",
                                 "fb-comment-respect", "fb-comment-thread", "clean-reply-inside-harmful-parent"]:
                         check("visible-" + eid + "-" + tag, "threshold", False, hidden(eid))
-                    # Known limitation, locked explicitly: a quoted insult is
-                    # indistinguishable from endorsement for lexical rules, so
-                    # the quoting reply hides while its harmless parent stays.
-                    check("quoted-insult-hidden-" + tag, "classification", True,
+                    # Sentence-level attribution now protects the reported
+                    # insult while leaving the harmless parent unchanged.
+                    check("quoted-insult-visible-" + tag, "classification", False,
                           hidden("quoted-reply"))
                     # Narrowed comment: only the matching body hides, while the
                     # author/actions chrome of the same comment stays visible.
@@ -273,7 +280,7 @@ def main():
                     def set_settings(patch):
                         cfg = dict(DEFAULT_SETTINGS)
                         cfg.update(patch)
-                        sw.evaluate(
+                        control.evaluate(
                             "cfg => chrome.storage.sync.set({tathabbutSettings: cfg}).then(() => 'ok')",
                             cfg,
                         )
@@ -450,7 +457,7 @@ def main():
                     if len([s for s in report["scenarios"] if not s["pass"]]) > failures_before:
                         shot("scenario")
 
-                    raw_status = sw.evaluate(
+                    raw_status = control.evaluate(
                         "chrome.storage.local.get('tathabbutStatus').then(r => JSON.stringify(r))"
                     )
                     status = json.loads(raw_status).get("tathabbutStatus", {})
@@ -463,7 +470,7 @@ def main():
                     page.close()
 
                 def read_status():
-                    raw = sw.evaluate(
+                    raw = control.evaluate(
                         "chrome.storage.local.get('tathabbutStatus').then(r => JSON.stringify(r))"
                     )
                     return json.loads(raw).get("tathabbutStatus", {})
@@ -473,7 +480,7 @@ def main():
                     cfg["apiUrl"] = api_url
                     if extra:
                         cfg.update(extra)
-                    sw.evaluate(
+                    control.evaluate(
                         "cfg => chrome.storage.sync.set({tathabbutSettings: cfg}).then(() => 'ok')",
                         cfg,
                     )
@@ -496,10 +503,7 @@ def main():
                 context_urls: list = []
                 ctx.on("request", lambda req: context_urls.append(req.url))
 
-                # --- Phase F1: unreachable API falls back to local rules. ---
-                # No host permission is ever granted here, and the port is
-                # closed, so the worker must refuse before fetching; the page
-                # must still hide stock-rule matches with zero mock traffic.
+                # --- Local-only compatibility: legacy API settings are ignored. ---
                 set_api_settings("http://127.0.0.1:9")
                 served["html"] = fixture_html
                 fb_page = ctx.new_page()
@@ -510,50 +514,22 @@ def main():
                 fb_page.goto("https://www.facebook.com/", wait_until="domcontentloaded")
                 try:
                     fb_page.wait_for_selector("#en-harass.tathabbut-hidden", timeout=15000)
-                    check("fallback-unreachable-hides", "threshold", True, True)
+                    check("legacy-url-ignored-local-hide", "classification", True, True)
                 except Exception:
-                    check("fallback-unreachable-hides", "threshold", True, False,
-                          "local fallback did not hide a stock-rule match")
-                check("fallback-unreachable-no-traffic", "privacy", True,
-                      not [u for u in context_urls if "127.0.0.1:9" in u],
-                      "mock host requests must be zero without a grant")
-
-                # --- Phase F2: category policy wins even during fallback. ---
-                set_api_settings("http://127.0.0.1:9", {"enabledCategories": ["spam"]})
+                    check("legacy-url-ignored-local-hide", "classification", True, False)
+                check("legacy-url-no-network", "privacy", True,
+                      not [u for u in context_urls if "127.0.0.1:9" in u])
+                set_api_settings("", {"enabledCategories": ["spam"]})
                 fb_page.reload(wait_until="domcontentloaded")
                 try:
                     fb_page.wait_for_function(
                         "document.querySelectorAll('#en-harass.tathabbut-hidden').length === 0",
                         timeout=10000,
                     )
-                    check("fallback-category-off", "threshold", False,
-                          fb_page.locator("#en-harass.tathabbut-hidden").count() == 1)
+                    check("local-category-off", "threshold", True, True)
                 except Exception:
-                    check("fallback-category-off", "threshold", False, False,
-                          "category-off not honored during fallback")
-
-                # --- Phase F3: garbage API URL falls back safely. ---
-                set_api_settings("not a url")
-                fb_page.reload(wait_until="domcontentloaded")
-                try:
-                    fb_page.wait_for_selector("#en-harass.tathabbut-hidden", timeout=15000)
-                    check("fallback-invalid-url-hides", "threshold", True, True)
-                except Exception:
-                    check("fallback-invalid-url-hides", "threshold", True, False)
-
-                # --- Phase F4: reveal still works while fallback is active. ---
-                fb_page.locator("#en-harass > .tathabbut-reveal").click()
-                try:
-                    fb_page.wait_for_function(
-                        "document.querySelectorAll('#en-harass.tathabbut-hidden').length === 0",
-                        timeout=5000,
-                    )
-                    check("fallback-reveal", "reveal", True, True)
-                except Exception:
-                    check("fallback-reveal", "reveal", True, False)
-                set_api_settings("")
+                    check("local-category-off", "threshold", True, False)
                 fb_page.close()
-
                 # --- Phase E: empty first scan vs delayed insertion. ---
                 # An empty feed must report articlesFound 0 with reason
                 # "starting"-adjacent state, not a silent failure; content
@@ -601,7 +577,7 @@ def main():
                 recover_page.close()
 
                 # English notice: switch language, reload, verify English strings, restore.
-                sw.evaluate(
+                control.evaluate(
                     "chrome.storage.sync.get('tathabbutSettings').then(s => "
                     "chrome.storage.sync.set({tathabbutSettings: {...s.tathabbutSettings, language: 'en'}}))"
                 )
@@ -617,7 +593,7 @@ def main():
                     check("notice-english-" + tag, "hide", True, en_button == "Reveal content", en_button)
                 except Exception:
                     check("notice-english-" + tag, "hide", True, False)
-                sw.evaluate(
+                control.evaluate(
                     "chrome.storage.sync.get('tathabbutSettings').then(s => "
                     "chrome.storage.sync.set({tathabbutSettings: {...s.tathabbutSettings, language: 'ar'}}))"
                 )

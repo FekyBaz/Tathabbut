@@ -22,7 +22,9 @@ function installPopupChromeStub(): void {
       }
       return {};
     }),
-    set: vi.fn(async () => undefined)
+    set: vi.fn(async (items: Record<string, unknown>) => {
+      if ("tathabbutSettings" in items) storedSettings = items.tathabbutSettings;
+    })
   };
   const local = {
     get: vi.fn(async (keys: unknown) => {
@@ -40,8 +42,7 @@ function installPopupChromeStub(): void {
   };
   const permissions = {
     contains: vi.fn(async () => true),
-    request: vi.fn(async () => true),
-    remove: vi.fn(async () => undefined)
+    remove: vi.fn(async () => true)
   };
   (globalThis as unknown as { chrome: unknown }).chrome = {
     storage: { sync, local },
@@ -56,7 +57,6 @@ function freshSnapshot(overrides: Record<string, unknown> = {}): Record<string, 
     enabled: true,
     threshold: 0.85,
     categories: 4,
-    apiMode: "local",
     articlesFound: 5,
     evaluated: 5,
     classified: 5,
@@ -172,14 +172,10 @@ describe("popup diagnostics panel", () => {
 describe("popup save flow", () => {
   function mocks() {
     const chromeApi = (globalThis as unknown as {
-      chrome: {
-        storage: { sync: { set: ReturnType<typeof vi.fn> } };
-        permissions: { request: ReturnType<typeof vi.fn> };
-      };
+      chrome: { storage: { sync: { set: ReturnType<typeof vi.fn> } } };
     }).chrome;
     return {
-      set: vi.mocked(chromeApi.storage.sync.set),
-      request: vi.mocked(chromeApi.permissions.request)
+      set: vi.mocked(chromeApi.storage.sync.set)
     };
   }
 
@@ -189,29 +185,59 @@ describe("popup save flow", () => {
     (document.getElementById("threshold") as HTMLInputElement).value = "90";
     (document.getElementById("save") as HTMLButtonElement).click();
     await settle(150);
-    const { set, request } = mocks();
+    const { set } = mocks();
     expect(set).toHaveBeenCalledWith({
       tathabbutSettings: {
         enabled: true,
         enabledCategories: ["harassment", "hate", "threats", "spam"],
         threshold: 0.9,
-        apiUrl: "",
         language: "en"
       }
     });
-    expect(request).not.toHaveBeenCalled();
     expect(text("status")).toContain("Local-only");
   });
 
-  it("rejects an invalid API URL without saving", async () => {
+  it("has no remote API controls", async () => {
+    expect(document.getElementById("apiUrl")).toBeNull();
+    expect(popupHtml).not.toContain("/v1/classify");
+    expect(popupHtml).not.toContain("api.example");
     await loadPopupModule();
-    (document.getElementById("apiUrl") as HTMLInputElement).value = "http://api.example.com";
-    // Default language is Arabic: the localized HTTPS error still names the scheme.
     (document.getElementById("save") as HTMLButtonElement).click();
     await settle(150);
-    const { set } = mocks();
-    expect(set).not.toHaveBeenCalled();
-    expect(text("status")).toContain("HTTPS");
+    expect(mocks().set).toHaveBeenCalledWith({
+      tathabbutSettings: {
+        enabled: true,
+        enabledCategories: ["harassment", "hate", "threats", "spam"],
+        threshold: 0.85,
+        language: "ar"
+      }
+    });
+  });
+
+  it("clears a legacy API setting and revokes its saved optional host permission", async () => {
+    storedSettings = { ...DEFAULT_SETTINGS, language: "en", apiUrl: "https://api.example.com:8443" };
+    await loadPopupModule();
+    expect(storedSettings).toEqual({
+      enabled: true,
+      enabledCategories: ["harassment", "hate", "threats", "spam"],
+      threshold: 0.85,
+      language: "en"
+    });
+    const chromeApi = (globalThis as unknown as {
+      chrome: { permissions: { contains: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> } };
+    }).chrome;
+    expect(chromeApi.permissions.contains).toHaveBeenCalledWith({ origins: ["https://api.example.com/*"] });
+    expect(chromeApi.permissions.remove).toHaveBeenCalledWith({ origins: ["https://api.example.com/*"] });
+    expect(text("status")).toContain("previous remote API setting was removed");
+  });
+
+  it("does not request any optional host permissions", async () => {
+    await loadPopupModule();
+    (document.getElementById("save") as HTMLButtonElement).click();
+    await settle(150);
+    const chromeApi = (globalThis as unknown as { chrome: { permissions: { contains: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> } } }).chrome;
+    expect(chromeApi.permissions.contains).not.toHaveBeenCalled();
+    expect(chromeApi.permissions.remove).not.toHaveBeenCalled();
   });
 });
 
@@ -229,7 +255,7 @@ describe("popup language", () => {
     expect(document.documentElement.lang).toBe("ar");
     expect(document.title).toBe("إعدادات تثبّت");
     expect(text("save")).toBe("حفظ الإعدادات");
-    expect(text("thresholdLabel")).toContain("عتبة الثقة");
+    expect(text("thresholdLabel")).toContain("عتبة قوة القاعدة");
     expect(text("st-started")).toContain("لا يوجد تقرير");
   });
 

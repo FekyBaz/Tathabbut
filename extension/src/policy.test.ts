@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, classifyLocally, isUsableRemoteClassification, normalizeForRules, shouldHide } from "./policy";
+import { DEFAULT_SETTINGS, classifyLocally, decidePolicy, normalizeForRules, shouldHide, type Category, type Classification } from "./policy";
+
+function localScore(category: Category, score: number): Classification {
+  return {
+    labels: [{ category, score }],
+    provider: "local-heuristic",
+    matches: [{ category, ruleId: category + ".test", reason: "test evidence", specificity: "high" }]
+  };
+}
 
 describe("classifyLocally", () => {
   it("detects V5 development-supported fraud and joke insults while preserving object, idea, and reported negatives", () => {
@@ -91,8 +99,30 @@ describe("classifyLocally", () => {
     expect(result.matches).toContainEqual({
       category: "harassment",
       ruleId: "harassment.1",
-      reason: "Targeted personal abuse phrase matched."
+      reason: "Targeted personal abuse phrase matched.",
+      specificity: "high"
     });
+  });
+  it("limits reported-speech suppression to its sentence", () => {
+    for (const text of [
+      "She said you are an idiot. I replied that you're pathetic.",
+      "I told him, you're pathetic.",
+      "قال لي: انت غبي. بس أنا قلت له انت أهبل.",
+      "The witness said, 'I'll break your jaw.' I will hurt you if you return."
+    ]) expect(classifyLocally(text).labels.length, text).toBeGreaterThan(0);
+    for (const text of [
+      "She said you are an idiot. She apologized afterward.",
+      "قال لي: انت غبي. وبعدها اعتذر عن كلامه.",
+      "The witness said, 'I'll break your jaw.' The interview ended afterward."
+    ]) expect(classifyLocally(text).labels, text).toEqual([]);
+  });
+  it("keeps contextual mockery, placeholder hate, and generic promotion in review", () => {
+    for (const text of ["يا سلام على الفهم", "All members of group are vermin", "Claim your prize now"]) {
+      const decision = decidePolicy(classifyLocally(text), DEFAULT_SETTINGS);
+      expect(decision.action, text).toBe("REVIEW");
+      expect(shouldHide(classifyLocally(text), DEFAULT_SETTINGS), text).toBe(false);
+    }
+    expect(shouldHide(classifyLocally("You are an idiot"), DEFAULT_SETTINGS)).toBe(true);
   });
   it.each(["مش هقتلك، خلينا نتكلم بهدوء", "انا مش هضربك", "مش هكسرك ولا هأذيك"])(
     "does not treat an explicitly negated Egyptian threat as a threat: %s",
@@ -129,20 +159,23 @@ describe("classifyLocally", () => {
 
 describe("shouldHide", () => {
   it("does not hide when filtering is disabled", () => {
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.99 }], provider: "test" }, {
+    expect(shouldHide(localScore("harassment", 0.99), {
       ...DEFAULT_SETTINGS, enabled: false
     })).toBe(false);
   });
   it("respects category selection and threshold", () => {
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.70 }], provider: "test" }, {
+    expect(shouldHide(localScore("harassment", 0.70), {
       ...DEFAULT_SETTINGS, threshold: 0.85
     })).toBe(false);
   });
 });
 
-it("rejects unknown remote categories and invalid scores", () => {
-  expect(isUsableRemoteClassification({ labels: [{ category: "misinformation", score: 0.9 }], provider: "test" })).toBe(false);
-  expect(isUsableRemoteClassification({ labels: [{ category: "spam", score: 8 }], provider: "test" })).toBe(false);
+it("rejects non-local classification results before they can affect policy", () => {
+  const remoteLike = { labels: [{ category: "harassment", score: 0.99 }], provider: "remote-test" } as unknown as Classification;
+  const localWithoutEvidence = { labels: [{ category: "harassment", score: 0.99 }], provider: "local-heuristic" } as unknown as Classification;
+  expect(decidePolicy(remoteLike, DEFAULT_SETTINGS)).toMatchObject({ action: "ALLOW", reason: "non-local-classification" });
+  expect(decidePolicy(localWithoutEvidence, DEFAULT_SETTINGS)).toMatchObject({ action: "ALLOW", reason: "non-local-classification" });
+  expect(shouldHide(remoteLike, DEFAULT_SETTINGS)).toBe(false);
 });
 
 describe("regression and decision boundaries", () => {
@@ -155,19 +188,17 @@ describe("regression and decision boundaries", () => {
     }
   });
   it("applies the threshold as an inclusive boundary", () => {
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.85 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.85 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: 0.86 })).toBe(false);
+    expect(shouldHide(localScore("harassment", 0.85), { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+    expect(shouldHide(localScore("harassment", 0.85), { ...DEFAULT_SETTINGS, threshold: 0.86 })).toBe(false);
   });
   it("refuses invalid thresholds and out-of-range scores", () => {
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.99 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: Number.NaN })).toBe(false);
-    expect(shouldHide({ labels: [{ category: "harassment", score: 2 }], provider: "test" }, DEFAULT_SETTINGS)).toBe(false);
-    expect(shouldHide({ labels: [{ category: "harassment", score: Number.NaN }], provider: "test" }, DEFAULT_SETTINGS)).toBe(false);
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.99 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: 2 })).toBe(false);
+    expect(shouldHide(localScore("harassment", 0.99), { ...DEFAULT_SETTINGS, threshold: Number.NaN })).toBe(false);
+    expect(shouldHide(localScore("harassment", 2), DEFAULT_SETTINGS)).toBe(false);
+    expect(shouldHide(localScore("harassment", Number.NaN), DEFAULT_SETTINGS)).toBe(false);
+    expect(shouldHide(localScore("harassment", 0.99), { ...DEFAULT_SETTINGS, threshold: 2 })).toBe(false);
   });
-  it("ignores disabled categories and malformed remote payloads", () => {
-    expect(shouldHide({ labels: [{ category: "spam", score: 0.99 }], provider: "test" }, { ...DEFAULT_SETTINGS, enabledCategories: ["harassment"] })).toBe(false);
-    expect(isUsableRemoteClassification({ labels: [{ category: "harassment", score: Number.NaN }], provider: "test" })).toBe(false);
-    expect(isUsableRemoteClassification({ labels: [], provider: 42 })).toBe(false);
+  it("ignores disabled local categories", () => {
+    expect(shouldHide(localScore("spam", 0.99), { ...DEFAULT_SETTINGS, enabledCategories: ["harassment"] })).toBe(false);
   });
 });
 
@@ -269,16 +300,20 @@ describe("Arabic bullying, mockery, and personal put-downs", () => {
     "انت غبي",
     "إنت أهبل",
     "يا متخلف",
-    "يا حقير",
-    "عبقري زمانك",
-    "يا سلام على الذكاء",
-    "ما شاء الله على الفهم",
-    "فاهم اوي"
-  ])("flags a targeted bullying or mockery phrase: %s", (text) => {
+    "يا حقير"
+  ])("hides an explicit targeted insult: %s", (text) => {
     const result = classifyLocally(text);
     expect(result.labels.map((label) => label.category)).toContain("harassment");
     expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
   });
+
+  it.each(["عبقري زمانك", "يا سلام على الذكاء", "ما شاء الله على الفهم", "فاهم اوي"])(
+    "keeps ambiguous mockery visible for review: %s", (text) => {
+      const result = classifyLocally(text);
+      expect(result.labels.map((label) => label.category)).toContain("harassment");
+      expect(decidePolicy(result, DEFAULT_SETTINGS).action).toBe("REVIEW");
+      expect(shouldHide(result, DEFAULT_SETTINGS)).toBe(false);
+    });
 
   it.each([
     "أنا مختلف معاك في الرأي",

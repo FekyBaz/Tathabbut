@@ -1,5 +1,4 @@
 import { DEFAULT_SETTINGS, type Category, type UserSettings } from "./policy";
-import { apiPermissionPattern, apiProblemOf, normalizeApiUrl } from "./remote-api";
 import { DEBUG_FLAG_KEY, STATUS_KEY, statusViewModel, type ContentStatus } from "./diagnostics";
 import { pickLanguage, t, type Language, type LocaleStrings } from "./i18n";
 
@@ -21,7 +20,6 @@ function applyDocumentLanguage(): void {
 const enabled = byId<HTMLInputElement>("enabled");
 const threshold = byId<HTMLInputElement>("threshold");
 const thresholdValue = byId<HTMLElement>("thresholdValue");
-const apiUrl = byId<HTMLInputElement>("apiUrl");
 const status = byId<HTMLElement>("status");
 const debugToggle = byId<HTMLInputElement>("debug");
 const languageSelect = byId<HTMLSelectElement>("language");
@@ -40,6 +38,37 @@ function selectedCategories(): Category[] {
     .filter((value): value is Category => DEFAULT_SETTINGS.enabledCategories.includes(value as Category));
 }
 
+function settingsFromStored(value: unknown): UserSettings {
+  const candidate = value && typeof value === "object" ? value as Partial<UserSettings> : undefined;
+  return {
+    enabled: typeof candidate?.enabled === "boolean" ? candidate.enabled : DEFAULT_SETTINGS.enabled,
+    enabledCategories: Array.isArray(candidate?.enabledCategories)
+      ? candidate.enabledCategories.filter((item): item is Category =>
+          DEFAULT_SETTINGS.enabledCategories.includes(item as Category))
+      : [...DEFAULT_SETTINGS.enabledCategories],
+    threshold: typeof candidate?.threshold === "number" && candidate.threshold >= 0 && candidate.threshold <= 1
+      ? candidate.threshold : DEFAULT_SETTINGS.threshold,
+    language: pickLanguage(candidate?.language)
+  };
+}
+
+function hasLegacyApiUrl(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "apiUrl"));
+}
+
+async function removeLegacyApiPermission(value: unknown): Promise<boolean> {
+  if (typeof value !== "string" || !value.trim()) return true;
+  try {
+    const parsed = new URL(value);
+    if (!["http:", "https:"].includes(parsed.protocol) || !parsed.hostname) return true;
+    const origin = parsed.protocol + "//" + parsed.hostname + "/*";
+    if (!await chrome.permissions.contains({ origins: [origin] })) return true;
+    return await chrome.permissions.remove({ origins: [origin] });
+  } catch {
+    return false;
+  }
+}
+
 function renderTexts(): void {
   strings = t(lang);
   applyDocumentLanguage();
@@ -51,8 +80,6 @@ function renderTexts(): void {
   byId("cat-threats").textContent = strings.categoryThreats;
   byId("cat-spam").textContent = strings.categorySpam;
   byId("thresholdLabel").textContent = strings.thresholdLabel;
-  byId("apiLabel").textContent = strings.apiLabel;
-  byId("apiHint").textContent = strings.apiHint;
   byId("languageLabel").textContent = strings.languageLabel;
   byId("lang-ar").textContent = strings.languageNameAr;
   byId("lang-en").textContent = strings.languageNameEn;
@@ -76,16 +103,6 @@ function reflectThreshold(): void {
   thresholdValue.textContent = threshold.value + "%";
 }
 threshold.addEventListener("input", reflectThreshold);
-
-function apiErrorMessage(error: unknown): string {
-  const problem = apiProblemOf(error);
-  if (problem === "scheme") return strings.apiErrorScheme;
-  if (problem === "credentials") return strings.apiErrorCredentials;
-  if (problem === "query") return strings.apiErrorQuery;
-  if (problem === "path") return strings.apiErrorPath;
-  if (problem === "https") return strings.apiErrorHttps;
-  return strings.apiErrorInvalid;
-}
 
 async function readStatus(): Promise<{ snapshot?: ContentStatus; storageError: boolean }> {
   try {
@@ -139,10 +156,15 @@ async function persistLanguage(next: Language): Promise<void> {
   renderTexts();
   try {
     const stored = await chrome.storage.sync.get("tathabbutSettings");
-    const saved = (stored.tathabbutSettings as UserSettings | undefined) ?? DEFAULT_SETTINGS;
+    const saved = settingsFromStored(stored.tathabbutSettings);
+    const hadLegacyApiUrl = hasLegacyApiUrl(stored.tathabbutSettings);
     await chrome.storage.sync.set({
       tathabbutSettings: { ...saved, enabledCategories: [...saved.enabledCategories], language: next }
     });
+    if (hadLegacyApiUrl) {
+      status.textContent = await removeLegacyApiPermission(stored.tathabbutSettings.apiUrl)
+        ? strings.statusLegacyApiRemoved : strings.statusLegacyApiPermissionNotRemoved;
+    }
   } catch {
     status.textContent = strings.statusSaveFailed;
   }
@@ -157,18 +179,24 @@ async function load(): Promise<void> {
   renderTexts();
   try {
     const stored = await chrome.storage.sync.get("tathabbutSettings");
-    const saved = stored.tathabbutSettings as UserSettings | undefined;
-    const value = saved ?? DEFAULT_SETTINGS;
+    const value = settingsFromStored(stored.tathabbutSettings);
+    const hadLegacyApiUrl = hasLegacyApiUrl(stored.tathabbutSettings);
     lang = pickLanguage(value.language);
     renderTexts();
     enabled.checked = value.enabled;
     threshold.value = String(Math.round(value.threshold * 100));
-    apiUrl.value = value.apiUrl ?? "";
     languageSelect.value = lang;
     document.querySelectorAll<HTMLInputElement>('input[name="category"]').forEach((input) => {
       input.checked = value.enabledCategories.includes(input.value as Category);
     });
     reflectThreshold();
+    if (hadLegacyApiUrl) {
+      await chrome.storage.sync.set({
+        tathabbutSettings: { ...value, enabledCategories: [...value.enabledCategories] }
+      });
+      status.textContent = await removeLegacyApiPermission(stored.tathabbutSettings.apiUrl)
+        ? strings.statusLegacyApiRemoved : strings.statusLegacyApiPermissionNotRemoved;
+    }
   } catch {
     status.textContent = strings.statusLoadFailed;
   }
@@ -176,63 +204,16 @@ async function load(): Promise<void> {
 }
 
 byId<HTMLButtonElement>("save").addEventListener("click", async () => {
-  let normalizedUrl: string;
   try {
-    normalizedUrl = normalizeApiUrl(apiUrl.value);
-  } catch (error) {
-    status.textContent = apiErrorMessage(error);
-    return;
-  }
-
-  let newPermission: string | null = null;
-  let permissionWasNewlyGranted = false;
-  try {
-    // Request permission directly from the save click before any asynchronous storage calls.
-    if (normalizedUrl) {
-      newPermission = apiPermissionPattern(normalizedUrl);
-      // Start the permission check, but invoke request before yielding so it remains tied to the Save click.
-      const wasGranted = chrome.permissions.contains({ origins: [newPermission] });
-      const granted = await chrome.permissions.request({ origins: [newPermission] });
-      if (!granted) {
-        status.textContent = strings.statusPermissionDenied;
-        return;
-      }
-      permissionWasNewlyGranted = !(await wasGranted);
-    }
-
-    const stored = await chrome.storage.sync.get("tathabbutSettings");
-    const oldValue = stored.tathabbutSettings as UserSettings | undefined;
-    let oldUrl = "";
-    try {
-      oldUrl = oldValue?.apiUrl ? normalizeApiUrl(oldValue.apiUrl) : "";
-    } catch {
-      // A previously stored invalid URL is not trusted or reused.
-    }
-
     const value: UserSettings = {
       enabled: enabled.checked,
       enabledCategories: selectedCategories(),
       threshold: Number(threshold.value) / 100,
-      apiUrl: normalizedUrl,
       language: pickLanguage(languageSelect.value)
     };
     await chrome.storage.sync.set({ tathabbutSettings: value });
-
-    if (oldUrl) {
-      const oldPermission = apiPermissionPattern(oldUrl);
-      if (oldPermission !== newPermission) {
-        try {
-          await chrome.permissions.remove({ origins: [oldPermission] });
-        } catch {
-          // Settings are already saved; failure to revoke the old optional grant is non-fatal.
-        }
-      }
-    }
-    status.textContent = normalizedUrl ? strings.statusSavedRemote : strings.statusSavedLocal;
+    status.textContent = strings.statusSavedLocal;
   } catch {
-    if (permissionWasNewlyGranted && newPermission) {
-      await chrome.permissions.remove({ origins: [newPermission] }).catch(() => false);
-    }
     status.textContent = strings.statusSaveFailed;
   }
 });

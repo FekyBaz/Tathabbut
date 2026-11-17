@@ -1,24 +1,25 @@
-# Privacy model
+# Privacy model — local-only Release Candidate
 
-## Local-first
-The extension processes visible feed text locally by default. It stores user preferences in Chrome storage and does not need passwords, cookies, DMs, friend lists, or account tokens.
+## Comment and post text
 
-## Optional remote classification
-When a user intentionally configures an API URL, only the selected text snippet and requested categories are sent through the extension service worker. The extension asks for optional host access to the configured API host, rather than making cross-origin requests directly from the Facebook page. Non-local hosts must use HTTPS. Clearing or changing the API URL removes the previous host permission. Do not send profile names, post authors, cookies, or surrounding page metadata unless a future feature establishes a specific need and documents it.
+The extension classifies extracted text locally in the browser. This Release Candidate contains no remote classification setting, remote classification code, Backend dependency, or extension-initiated request that transmits extracted post/comment text. The local rule engine only receives text held by the content script for classification and filtering.
 
-## Retention and logging
-The starter API does not log submitted text. Deployers must review web-server, hosting, proxy, and provider logs/retention settings before production use. Do not send sensitive content to third-party models without informed consent and an understandable retention policy.
+Normal Facebook website requests, browser/network activity, browser extensions outside Tathabbut, and traffic from other software are outside that guarantee. This statement is specifically about Tathabbut's extension code and extracted content.
 
-## User controls
-- Categories can be switched on/off.
-- Confidence threshold is configurable.
-- Hidden content can be revealed.
-- API use is disabled unless configured.
-- No content is reported to Facebook or deleted.
+## Permissions
 
-## Contributor checklist
-1. Can this run locally?
-2. What exact data leaves the browser?
-3. Has the user been told and given control?
-4. Is content logged or persisted?
-5. Can the feature work without identity data?
+The extension declares `storage` to save settings and local diagnostic status. It has static host access only for `https://facebook.com/*` and `https://*.facebook.com/*`, which allows the content script to inspect visible supported text on Facebook pages. It does not request optional HTTP/HTTPS host access, and there is no background service worker in this package.
+
+## Stored data
+
+- Filtering preferences are stored using `chrome.storage.sync`. If the user enables Chrome Sync, those preferences may sync through the user's browser account. Preferences can include enabled state, selected categories, rule-strength threshold, and UI language; they do not include extracted comments.
+- Diagnostic status is stored in `chrome.storage.local` and contains aggregate counts, settings state, reason codes, and the current Facebook hostname.
+- Opt-in diagnostic logs can include lengths, fingerprints, rule IDs, and reasons. They do not intentionally store post text, author names, or full page URLs. Lifecycle diagnostics, when separately enabled for development, use the Facebook page's local storage and contain lifecycle metadata only.
+
+## Legacy remote settings
+
+When upgrading from a prior build, opening the popup clears any previously stored API URL from the synchronized settings and attempts to remove its saved optional host permission. The current extension ignores legacy API settings even before this cleanup. If the old origin permission cannot be removed automatically, the popup reports that condition; remote classification remains unavailable.
+
+## User controls and limits
+
+Users can turn filtering off, choose categories, change the rule-strength threshold, enable metadata diagnostics, and reveal hidden content. The filter does not report, delete, or post content. Local rules can still make false-positive and false-negative decisions; see [responsible filtering](RESPONSIBLE_FILTERING.md).
