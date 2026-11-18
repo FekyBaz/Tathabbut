@@ -59,7 +59,7 @@
 | **V10** | صيغ افتتاح spam + قاعدة co-occurrence (جائزة + تواصل خاص) | GAPS P1 (`enta kasabt`) | بدون FP على تسويق مشروع/تبرع |
 | **V11** | تطبيع محدود للأخطاء وتكرار الحروف (idiooot/idot) مع ميزانية FP | GAPS P2 | لا FP جديد على تمطيط شرعي للكلمات |
 | **V12** | تنويعات Arabizi إضافية (صيغ `ya X` و`enta/inti + Y`) | GAPS P1 | بدون تعميم fuzzy transliteration |
-| **تقني** | semantic rule IDs بدل الموضعية | GAPS P2 | لا تغيير سلوكي؛ استقرار التشخيص والقياس |
+| ~~**تقني**~~ ✅ | semantic rule IDs بدل الموضعية (تم 2026-11-18) | GAPS P2 | لا تغيير سلوكي؛ الخريطة في `eval/RULE_ENGINE_SEMANTIC_IDS.md` |
 | **محجوبة** | Hate | placeholder `group` فقط | **لا قواعد قبل**: تعريف سياسة + taxonomy أهداف + بيانات مراجعة مستقلة |
 
 > **قاعدة:** لا تُضاف قاموسيات كلمات كبيرة دون فشل dev واضح + hard negatives +
