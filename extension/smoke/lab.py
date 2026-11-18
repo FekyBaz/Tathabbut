@@ -529,6 +529,10 @@ def main():
                     check("local-category-off", "threshold", True, True)
                 except Exception:
                     check("local-category-off", "threshold", True, False)
+                # The check above disables every category except spam. Restore
+                # defaults before the dynamic and English-notice phases, which
+                # must observe harassment hiding normally.
+                set_api_settings("")
                 fb_page.close()
                 # --- Phase E: empty first scan vs delayed insertion. ---
                 # An empty feed must report articlesFound 0 with reason
