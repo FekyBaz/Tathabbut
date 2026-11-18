@@ -408,3 +408,41 @@ describe("V8 third-person authored abuse", () => {
     expect(classifyLocally("I believe he is a good teammate.").labels).toEqual([]);
   });
 });
+
+describe("V9 additional injury constructions", () => {
+  it.each([
+    "I'm going to choke you if you come closer.",
+    "I'll knock your teeth out.",
+    "I will break his face.",
+    "هخنقك لو رجعت تاني.",
+    "هخنقها لو قربت من البيت.",
+    "I'm going to choke you لو قربت."
+  ])("hides a first-person injury threat with a human object: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("threats");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "This update will knock your socks off.",
+    "I'll choke on my coffee if I eat too fast.",
+    "We need to break the build before release.",
+    "I'm going to break your fall with this cushion.",
+    "مش هخنقك، خلينا نحل المشكلة بالكلام.",
+    "ما هخنقكش، أنا عايز أتكلم.",
+    "قال هخنقك لو رجعت للشارع ده.",
+    "هخنق العملية دي لو علقت.",
+    "She said she would choke you.",
+    "The hero will choke the villain in the final scene.",
+    "I'm going to choke the noise with this cushion."
+  ])("keeps idioms, negation, reports, technical and non-human objects visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("threats");
+  });
+
+  it("keeps existing threat rule IDs stable and assigns the new appended IDs", () => {
+    expect(classifyLocally("I'll break your jaw.").matches.map((match) => match.ruleId)).toContain("threats.2");
+    expect(classifyLocally("هقتلك.").matches.map((match) => match.ruleId)).toContain("threats.4");
+    expect(classifyLocally("I'll choke you.").matches.map((match) => match.ruleId)).toContain("threats.7");
+    expect(classifyLocally("هخنقك.").matches.map((match) => match.ruleId)).toContain("threats.8");
+  });
+});

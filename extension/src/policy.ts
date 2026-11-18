@@ -225,7 +225,12 @@ const patterns: Record<Category, RegExp[]> = {
     /(?:^|[\s،,.!?؟])(?:هقتلك|هذبحك|هضربك|هكسرك|بقتلك|ساقتلك|سوف\s+اقتلك|سوف\s+اذيك|اريد\s+قتلك|عايز\s+اقتلك|عاوز\s+اقتلك|(?:راح|رح)\s+اقتلك)(?=$|[\s،,.!?؟])/u,
     /(?:^|[\s،,.!?؟])(?:هقتل|هاذي|هضرب)(?:ه|ها|هم)(?=$|[\s،,.!?؟])/u,
     // Attested Egyptian Arabizi future threats; keep to second-person forms.
-    /\b(?:ha2telek|hadrabak|haksarak)\b/i
+    /\b(?:ha2telek|hadrabak|haksarak)\b/i,
+    // V9: additional injury predicates with an explicit human object. Appended
+    // to preserve rule IDs. The object vocabulary is closed on purpose: benign
+    // knock idioms, technical objects, and self-directed choking stay visible.
+    /\b(?:i will|i am going to|i'm going to|i'll|im gonna|i'm gonna)\s+(?:choke\s+(?:you|him|her|them)|knock\s+(?:your|his|her|their)\s+teeth\s+out|break\s+(?:your|his|her|their)\s+(?:face|skull))\b/i,
+    /(?:^|[\s،,.!?؟])هخنق(?:ها|هم|ك|ه)(?=$|[\s،,.!?؟])/u
   ],
   spam: [
     /\b(?:dm me to claim|guaranteed profit|claim your prize now)\b/i,
@@ -253,7 +258,7 @@ export function classifyLocally(text: string): Classification {
   for (const category of CATEGORIES) {
     // Remove only explicit negation forms attested in the development set.
     const threatText = ruleText.replace(
-      /(?:^|[\s،,.!?؟])(?:مش|ما)\s+(?:(?:هقتلك|هذبحك|هضربك|هكسرك|هأذيك|هاذيك|هقتل(?:ه|ها|هم)|هضرب(?:ه|ها|هم)))(?:\s+ولا\s+(?:هقتلك|هذبحك|هضربك|هكسرك|هأذيك|هاذيك|هقتل(?:ه|ها|هم)|هضرب(?:ه|ها|هم)))*(?=$|[\s،,.!?؟])/gu,
+      /(?:^|[\s،,.!?؟])(?:مش|ما)\s+(?:(?:هقتلك|هذبحك|هضربك|هكسرك|هأذيك|هاذيك|هقتل(?:ه|ها|هم)|هضرب(?:ه|ها|هم)|هخنق(?:ها|هم|ك|ه)ش?))(?:\s+ولا\s+(?:هقتلك|هذبحك|هضربك|هكسرك|هأذيك|هاذيك|هقتل(?:ه|ها|هم)|هضرب(?:ه|ها|هم)|هخنق(?:ها|هم|ك|ه)ش?))*(?=$|[\s،,.!?؟])/gu,
       " "
     ).replace(/\b(?:ana\s+)?(?:mesh|msh)\s+(?:ha2telek|hadrabak|haksarak)\b/gi, " ");
     const matchText = category === "threats" ? threatText : ruleText;
