@@ -204,8 +204,8 @@ const patterns: Record<Category, RegExp[]> = {
     // Each alternative is a complete multi-word phrase, never a lone word.
     /(?:(?:انت\s+)?(?:مالكش|ملكش)\s+لازم[هة]?|محدش\s+بياخد\s+بكلامك|انت\s+اخر\s+واحد\s+يتكلم|انت\s+متفهمش\s+حاج[هة]?|كلامك\s+يضحك)/u,
     // Narrow, whole-phrase Arabizi forms; avoid treating isolated tokens as abuse.
-    /\b(?:enta|inti|entu)\s+(?:ghaby|ghabi|ahbal)\b/i,
-    /\benta\s+faker\b/i,
+    /(?<!\b(?:mish|mesh|msh)\s+)\b(?:enta|inti|entu)\s+(?:ghaby|ghabi|ahbal)\b/i,
+    /(?<!\b(?:mish|mesh|msh)\s+)\benta\s+faker\b/i,
     /\b(?:you(?:'re| are)|u r)\s+اهبل(?=$|[\s،,.!?؟])/iu,
     /\bya\s+(?:7mar|7omar|hamar)\b/i,
     /\bya\s+ahbal\b/i,

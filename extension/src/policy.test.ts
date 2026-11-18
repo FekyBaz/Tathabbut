@@ -587,3 +587,33 @@ describe("V13 plural and past-tense personal abuse", () => {
     expect(classifyLocally("They're idiots.").matches.map((match) => match.ruleId)).toContain("harassment.28");
   });
 });
+
+describe("V14 negation guard for legacy Arabizi patterns", () => {
+  it.each([
+    "enta ghaby",
+    "inti ahbal",
+    "enta faker",
+    "mish ana ghaby, enta ghaby."
+  ])("still hides unnegated or clause-locally-affirmed insults: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "mish enta ghaby, ana bamzah.",
+    "mesh enta faker, ana 3ayez atfahm.",
+    "msh inti ghaby.",
+    "mish entu ahbal.",
+    "mish enta ghaby w mesh enta faker.",
+    "I'm not an idiot."
+  ])("keeps explicitly negated insults visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+
+  it("keeps the guarded legacy rule IDs unchanged", () => {
+    const ids = classifyLocally("enta ghaby").matches.map((match) => match.ruleId);
+    expect(ids).toContain("harassment.16");
+    expect(classifyLocally("enta faker").matches.map((match) => match.ruleId)).toContain("harassment.17");
+  });
+});
