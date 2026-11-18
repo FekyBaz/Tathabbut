@@ -21,8 +21,6 @@ export interface LocaleStrings {
   categoryThreats: string;
   categorySpam: string;
   thresholdLabel: string;
-  apiLabel: string;
-  apiHint: string;
   saveButton: string;
   languageLabel: string;
   languageNameAr: string;
@@ -42,16 +40,11 @@ export interface LocaleStrings {
   rowSource: string;
   statusLoadFailed: string;
   statusSavedLocal: string;
-  statusSavedRemote: string;
-  statusPermissionDenied: string;
   statusSaveFailed: string;
   statusDiagSaveFailed: string;
-  apiErrorScheme: string;
-  apiErrorCredentials: string;
-  apiErrorQuery: string;
-  apiErrorPath: string;
-  apiErrorHttps: string;
-  apiErrorInvalid: string;
+  statusLegacyApiRemoved: string;
+  statusLegacyApiPermissionNotRemoved: string;
+  statusLegacyApiClearFailed: string;
   noticeHidden: string;
   noticeSupport: string;
   revealLabel: string;
@@ -69,9 +62,7 @@ const en: LocaleStrings = {
   categoryHate: "Hateful or dehumanizing attacks",
   categoryThreats: "Threats of violence",
   categorySpam: "Spam",
-  thresholdLabel: "Confidence threshold:",
-  apiLabel: "Optional self-hosted API origin",
-  apiHint: "Enter the origin only; /v1/classify is appended automatically. Leave blank for local-only mode. HTTPS is required except for localhost. You will be asked to grant access to this host. Never paste provider API keys here.",
+  thresholdLabel: "Rule-strength threshold:",
   saveButton: "Save settings",
   languageLabel: "Language",
   languageNameAr: "Arabic",
@@ -91,16 +82,11 @@ const en: LocaleStrings = {
   rowSource: "Reported from",
   statusLoadFailed: "Could not load settings; defaults are active.",
   statusSavedLocal: "Settings saved. Local-only mode is active.",
-  statusSavedRemote: "Settings saved. Remote classification uses the granted host only.",
-  statusPermissionDenied: "API permission was not granted. Settings were not changed.",
-  statusSaveFailed: "Could not save settings or update API permissions.",
+  statusSaveFailed: "Could not save settings.",
+  statusLegacyApiRemoved: "A previous remote API setting was removed. This version classifies locally only.",
+  statusLegacyApiPermissionNotRemoved: "The old API setting was removed, but its saved site permission could not be removed automatically.",
+  statusLegacyApiClearFailed: "Remote API settings are ignored, but could not be removed from synced storage.",
   statusDiagSaveFailed: "Could not save the diagnostic setting.",
-  apiErrorScheme: "API URL must use HTTP or HTTPS.",
-  apiErrorCredentials: "API URL must not contain credentials.",
-  apiErrorQuery: "API URL must not contain a query string or fragment.",
-  apiErrorPath: "Enter the API origin only; /v1/classify is appended automatically.",
-  apiErrorHttps: "Non-local API URLs must use HTTPS.",
-  apiErrorInvalid: "Enter a valid API URL.",
   noticeHidden: "This content was hidden by Tathabbut.",
   noticeSupport: "You can reveal it again.",
   revealLabel: "Reveal content",
@@ -118,9 +104,7 @@ const ar: LocaleStrings = {
   categoryHate: "خطاب الكراهية أو نزع الإنسانية",
   categoryThreats: "التهديدات بالعنف",
   categorySpam: "المحتوى المزعج",
-  thresholdLabel: "عتبة الثقة:",
-  apiLabel: "عنوان واجهة API المستضافة ذاتيًا (اختياري)",
-  apiHint: "أدخل الأصل فقط؛ تتم إضافة /v1/classify تلقائيًا. اتركه فارغًا للوضع المحلي فقط. يلزم HTTPS ما عدا localhost. سيُطلب منك منح الوصول إلى هذا المضيف. لا تلصق مفاتيح API هنا أبدًا.",
+  thresholdLabel: "عتبة قوة القاعدة:",
   saveButton: "حفظ الإعدادات",
   languageLabel: "اللغة",
   languageNameAr: "العربية",
@@ -140,16 +124,11 @@ const ar: LocaleStrings = {
   rowSource: "مصدر التقرير",
   statusLoadFailed: "تعذر تحميل الإعدادات؛ الإعدادات الافتراضية نشطة.",
   statusSavedLocal: "تم حفظ الإعدادات. الوضع المحلي فقط نشط.",
-  statusSavedRemote: "تم حفظ الإعدادات. التصنيف عن بُعد يستخدم المضيف المصرّح به فقط.",
-  statusPermissionDenied: "لم يُمنح إذن الواجهة. لم تتغير الإعدادات.",
-  statusSaveFailed: "تعذر حفظ الإعدادات أو تحديث أذونات الواجهة.",
+  statusSaveFailed: "تعذر حفظ الإعدادات.",
+  statusLegacyApiRemoved: "أُزيل إعداد الواجهة البعيد السابق. هذا الإصدار يصنّف محليًا فقط.",
+  statusLegacyApiPermissionNotRemoved: "أُزيل إعداد الواجهة السابق، لكن تعذر إزالة إذن الموقع المحفوظ تلقائيًا.",
+  statusLegacyApiClearFailed: "تم تجاهل إعداد الواجهة البعيد، لكن تعذر حذفه من التخزين المتزامن.",
   statusDiagSaveFailed: "تعذر حفظ إعداد التشخيص.",
-  apiErrorScheme: "يجب أن يستخدم عنوان API بروتوكول HTTP أو HTTPS.",
-  apiErrorCredentials: "يجب ألا يحتوي عنوان API على بيانات اعتماد.",
-  apiErrorQuery: "يجب ألا يحتوي عنوان API على استعلام أو جزء.",
-  apiErrorPath: "أدخل أصل الواجهة فقط؛ تتم إضافة /v1/classify تلقائيًا.",
-  apiErrorHttps: "العناوين غير المحلية يجب أن تستخدم HTTPS.",
-  apiErrorInvalid: "أدخل عنوان API صالحًا.",
   noticeHidden: "تم إخفاء هذا المحتوى بواسطة تثبّت.",
   noticeSupport: "يمكنك إظهار المحتوى مرة أخرى.",
   revealLabel: "إظهار المحتوى",

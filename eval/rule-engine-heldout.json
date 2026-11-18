@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "split": "held-out",
+  "description": "Synthetic held-out rule evaluation; do not use these items to tune patterns. Ambiguous items are reported separately.",
+  "items": [
+    {"id":"test-en-threat-neg-1","text":"I won't hurt you; I only want my book back.","expect":[],"lang":"en","status":"clear","category":"threats","rationale":"Explicitly denies intent to harm."},
+    {"id":"test-ar-threat-neg-1","text":"مش هكسرك ولا هأذيك","expect":[],"lang":"ar","status":"clear","category":"threats","rationale":"Negated Egyptian threats with two harm verbs."},
+    {"id":"test-ar-threat-pos-1","text":"سوف أقتلك","expect":["threats"],"lang":"ar","status":"clear","category":"threats","rationale":"Direct explicit Arabic threat."},
+    {"id":"test-en-threat-pos-1","text":"I am going to shoot you.","expect":["threats"],"lang":"en","status":"clear","category":"threats","rationale":"Direct explicit threat."},
+    {"id":"test-en-crit-1","text":"This function is buggy and needs a simpler design.","expect":[],"lang":"en","status":"clear","category":"harassment","rationale":"Criticizes code, not a person."},
+    {"id":"test-ar-crit-1","text":"الكود ده فيه اخطاء وعايز refactor","expect":[],"lang":"mixed","status":"clear","category":"harassment","rationale":"Mixed-language criticism of code."},
+    {"id":"test-en-insult-1","text":"You are pathetic.","expect":["harassment"],"lang":"en","status":"clear","category":"harassment","rationale":"Direct personal put-down."},
+    {"id":"test-ar-insult-1","text":"يا حقيرة!","expect":["harassment"],"lang":"ar","status":"clear","category":"harassment","rationale":"Direct vocative personal insult."},
+    {"id":"test-en-report-1","text":"The article quotes him: 'You are a moron'.","expect":[],"lang":"en","status":"clear","category":"harassment","rationale":"Explicit article quotation, not an attack by author."},
+    {"id":"test-ar-report-1","text":"قالت انتي فاشلة ثم ندمت","expect":[],"lang":"ar","status":"clear","category":"harassment","rationale":"Reports a prior insult by another speaker."},
+    {"id":"test-en-context-1","text":"You are wrong about the API behavior.","expect":[],"lang":"en","status":"clear","category":"harassment","rationale":"Disagrees with a claim, no personal insult."},
+    {"id":"test-ar-context-1","text":"انت فاهم قصدي غلط، خليني اوضح","expect":[],"lang":"ar","status":"clear","category":"harassment","rationale":"Corrects a misunderstanding without abuse."},
+    {"id":"test-mix-insult-1","text":"You're an idiot يا صاحبي","expect":["harassment"],"lang":"mixed","status":"clear","category":"harassment","rationale":"English direct insult with Arabic address."},
+    {"id":"test-ar-normalize-1","text":"اِنْتَ غَــبِي؟","expect":["harassment"],"lang":"ar","status":"clear","category":"harassment","rationale":"Direct insult with diacritics, tatweel, and punctuation."},
+    {"id":"test-en-spam-neg-1","text":"DM me the meeting notes when you can.","expect":[],"lang":"en","status":"clear","category":"spam","rationale":"Benign direct message request."},
+    {"id":"test-ar-spam-pos-1","text":"ابعتلي خاص عشان تكسب","expect":["spam"],"lang":"ar","status":"clear","category":"spam","rationale":"Explicit prize solicitation spam."},
+    {"id":"test-en-threat-idiom-1","text":"I will kill time before the call.","expect":[],"lang":"en","status":"clear","category":"threats","rationale":"Common idiom, no target or threat."},
+    {"id":"test-ar-meta-1","text":"الشتيمة مش حل وخلينا نحترم بعض","expect":[],"lang":"ar","status":"clear","category":"harassment","rationale":"Counterspeech opposing insults."},
+    {"id":"test-en-amb-1","text":"Nice work, genius.","expect":[],"lang":"en","status":"ambiguous","category":"harassment","rationale":"Could be praise or sarcasm without surrounding context."},
+    {"id":"test-mix-amb-1","text":"يا معلم you killed it","expect":[],"lang":"mixed","status":"ambiguous","category":"threats","rationale":"English phrase is usually praise but literal threat interpretation is possible."},
+    {"id":"test-arabizi-insult-1","text":"ya 7mar","expect":["harassment"],"lang":"arabizi","status":"clear","category":"harassment","rationale":"Direct vocative insult in common Arabizi spelling."},
+    {"id":"test-arabizi-neg-1","text":"ana mesh ha2telek","expect":[],"lang":"arabizi","status":"clear","category":"threats","rationale":"Arabizi phrase explicitly negates a threat."},
+    {"id":"test-repeat-1","text":"You're an idot","expect":["harassment"],"lang":"en","status":"clear","category":"harassment","rationale":"Direct insult with a common misspelling."}
+  ]
+}

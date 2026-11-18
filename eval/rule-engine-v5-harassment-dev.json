@@ -1,0 +1,177 @@
+{
+  "version": "5.0.0",
+  "split": "development",
+  "provenance": "Synthetic, single-author V5 examples; no independent reviewers or suitable sourced data available. Do not present as independent evidence.",
+  "items": [
+    {
+      "id": "v5d-harassment-1",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "You are a complete fraud, stop pretending to help.",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Directly calls the addressee a fraud and attacks them personally.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-2",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "You are an absolute joke of a teammate.",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal degradation.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-3",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "Your code is a complete mess and fails every test.",
+      "expect": [],
+      "rationale": "Negative evaluation targets code, not its author.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-4",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "Calling someone a fraud without evidence can be defamatory.",
+      "expect": [],
+      "rationale": "Discusses a term and its use rather than directing it at a person.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-5",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "إنت أهبل ومش بتفهم",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct Egyptian Arabic vocative and personal belittling.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-6",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "الكود ده أهبل ومش بيشتغل",
+      "expect": [],
+      "rationale": "Colloquial negative description of code, not a person.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-7",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "الشرح مضلل ومحتاج توضيح",
+      "expect": [],
+      "rationale": "Criticism targets an explanation.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-8",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "هو قال لها يا أهبل في النقاش",
+      "expect": [],
+      "rationale": "Reports an insult attributed to another speaker.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-9",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "You are أهبل وبتعطل الشغل",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal insult in mixed Arabic-English.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-10",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "The UI is أهبل التصميم ومحتاج يتبسط",
+      "expect": [],
+      "rationale": "Negative product/design critique, no personal target.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-11",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "Your argument ضعيف ومحتاج دليل",
+      "expect": [],
+      "rationale": "Criticism targets an argument.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-12",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "The comment used the insult أهبل and was removed",
+      "expect": [],
+      "rationale": "Reports discussion of abusive wording.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-13",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "enta faker w btetmas7ar 3alena",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal accusation and belittling.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-14",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el app faker w by3mel crash",
+      "expect": [],
+      "rationale": "Negative product description, not personal attack.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-15",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el explanation mesh wad7a w ناقصها مثال",
+      "expect": [],
+      "rationale": "Criticism targets an explanation.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    },
+    {
+      "id": "v5d-harassment-16",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "howa 2al 3anno faker fel meeting",
+      "expect": [],
+      "rationale": "Reports an insult about someone else.",
+      "provenance": "Synthetic V5 challenge item drafted by one task author on 2026-10-28; not independently reviewed or adjudicated."
+    }
+  ]
+}

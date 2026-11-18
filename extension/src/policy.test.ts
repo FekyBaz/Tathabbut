@@ -1,7 +1,139 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, classifyLocally, isUsableRemoteClassification, normalizeForRules, shouldHide } from "./policy";
+import { CATEGORIES, DEFAULT_SETTINGS, RULE_IDS, classifyLocally, decidePolicy, normalizeForRules, patternCount, shouldHide, type Category, type Classification } from "./policy";
+
+function localScore(category: Category, score: number): Classification {
+  return {
+    labels: [{ category, score }],
+    provider: "local-heuristic",
+    matches: [{ category, ruleId: category + ".test", reason: "test evidence", specificity: "high" }]
+  };
+}
 
 describe("classifyLocally", () => {
+  it("detects V5 development-supported fraud and joke insults while preserving object, idea, and reported negatives", () => {
+    for (const text of [
+      "You are a complete fraud, stop pretending to help.",
+      "You are an absolute joke of a teammate.",
+      "You are a hopeless joke of an employee.",
+      "You are أهبل and you keep derailing the work.",
+      "إنت joke ومش نافع معانا",
+      "enta faker w mesh betefham"
+    ]) expect(classifyLocally(text).labels.map((label) => label.category), text).toContain("harassment");
+    for (const text of [
+      "This module is a joke and should be rewritten.",
+      "The joke in this release is the broken installer.",
+      "Your argument is a complete fraud.",
+      "The code ده أهبل ومش بيشتغل",
+      "The app is faker w byb3at data ghalat",
+      "The analyst called him a fraud in the report."
+    ]) expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+  it("does not let a generic mention of 'phrase' truncate a spam match", () => {
+    expect(classifyLocally("Send your wallet phrase now to unlock guaranteed profit").labels.map((label) => label.category)).toContain("spam");
+  });
+  it("protects explicit discussion of abusive wording without suppressing unrelated attacks", () => {
+    expect(classifyLocally("The phrase you are an idiot is a personal insult.").labels).toEqual([]);
+    expect(classifyLocally("The phrase is easy to remember; you are an idiot.").labels.map((label) => label.category)).toContain("harassment");
+  });
+  it("detects mixed-script prize bait only when private solicitation and claiming co-occur", () => {
+    expect(classifyLocally("مبروك كسبت prize ابعتلي خاص عشان تستلمها").labels.map((label) => label.category)).toContain("spam");
+    expect(classifyLocally("مبروك كسبت prize في مسابقة المدرسة واستلمتها امبارح").labels.map((label) => label.category)).not.toContain("spam");
+  });
+  it("detects the development-supported Arabizi prize-claim phrase but not a past-prize mention", () => {
+    expect(classifyLocally("mabrook kasabt el prize, eb3atly private 3ashan testalemha").labels.map((label) => label.category)).toContain("spam");
+    expect(classifyLocally("mabrook kasabt prize fel madrasa embare7").labels.map((label) => label.category)).not.toContain("spam");
+  });
+  it("detects newly supported enta/enty Arabizi prize solicitations only with reward, private contact, and collection cues", () => {
+    for (const text of [
+      "enta kasabt el reward, eb3atli private 3ashan testalemha",
+      "enta kasabt el flos, eb3atly private 3ashan testalem el bonus",
+      "enta kasabt bonus, eb3atli 3al private 3ashan testalem el reward"
+    ]) expect(classifyLocally(text).labels.map((label) => label.category)).toContain("spam");
+    for (const text of [
+      "enta kasabt prize fel madrasa embare7 w estalemto",
+      "Congrats on your prize! التسجيل مفتوح لكل الناس بدون DM",
+      "eb3atly private 3ashan ab3atlak el address",
+      "enta kasabt prize w ابعتلي خاص بس عشان احكيلك النتيجة",
+      "eb3atli private 3ashan ab3atlak el file"
+    ]) expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("spam");
+  });
+  it("detects future-intent body-part threats while protecting reports, negation, and technical uses", () => {
+    for (const text of [
+      "I'll break your jaw if you come back.",
+      "I am going to smash your nose if you approach me.",
+      "I promise I will break your arm if you touch my car.",
+      "I’m going to smash your nose if you return."
+    ]) expect(classifyLocally(text).labels.map((label) => label.category)).toContain("threats");
+    for (const text of [
+      "I will not break your jaw; I want to talk.",
+      "The article quotes him: ‘I will break your nose.’",
+      "The witness reported, ‘I’ll break your nose.’",
+      "He joked, ‘I will break your jaw,’ as part of a comedy sketch.",
+      "I hope you break your record this year.",
+      "We need to break the build before release."
+    ]) expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("threats");
+  });
+  it.each(["ha2telek law terg3 hena", "haksarak law terga3 hena"])(
+    "detects an attested direct Arabizi threat: %s",
+    (text) => expect(classifyLocally(text).labels.map((label) => label.category)).toContain("threats")
+  );
+  it("detects the attested Arabizi vocative insult and exempts its reported use", () => {
+    expect(classifyLocally("ya ahbal, enta mesh betefham").labels.map((label) => label.category)).toContain("harassment");
+    expect(classifyLocally("howa 2al ya ahbal fel comment").labels.map((label) => label.category)).not.toContain("harassment");
+  });
+  it.each(["ana mesh ha2telek, 3ayez netkalem", "msh hadrabak, ana 3ayez atfahm"])(
+    "keeps an explicitly negated Arabizi threat visible: %s",
+    (text) => expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("threats")
+  );
+  it("keeps an Arabizi threat attributed to someone else visible", () => {
+    expect(classifyLocally("howa 2al hadrabak law terga3, bas mesh ana").labels).toEqual([]);
+  });
+  it("recognizes a direct English insult with a common intensifier", () => {
+    expect(classifyLocally("You're a complete idiot!").labels.map((label) => label.category)).toContain("harassment");
+  });
+  it.each(["enta ghaby", "ya 7mar"])("recognizes a narrow direct Arabizi insult: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).toContain("harassment");
+  });
+  it("returns the matching rule ID and an explanation for local decisions", () => {
+    const result = classifyLocally("You are an idiot");
+    expect(result.matches).toContainEqual({
+      category: "harassment",
+      ruleId: "harassment.direct-en-insult",
+      reason: "Targeted personal abuse phrase matched.",
+      specificity: "high"
+    });
+  });
+  it("limits reported-speech suppression to its sentence", () => {
+    for (const text of [
+      "She said you are an idiot. I replied that you're pathetic.",
+      "I told him, you're pathetic.",
+      "قال لي: انت غبي. بس أنا قلت له انت أهبل.",
+      "The witness said, 'I'll break your jaw.' I will hurt you if you return."
+    ]) expect(classifyLocally(text).labels.length, text).toBeGreaterThan(0);
+    for (const text of [
+      "She said you are an idiot. She apologized afterward.",
+      "قال لي: انت غبي. وبعدها اعتذر عن كلامه.",
+      "The witness said, 'I'll break your jaw.' The interview ended afterward."
+    ]) expect(classifyLocally(text).labels, text).toEqual([]);
+  });
+  it("keeps contextual mockery, placeholder hate, and generic promotion in review", () => {
+    for (const text of ["يا سلام على الفهم", "All members of group are vermin", "Claim your prize now"]) {
+      const decision = decidePolicy(classifyLocally(text), DEFAULT_SETTINGS);
+      expect(decision.action, text).toBe("REVIEW");
+      expect(shouldHide(classifyLocally(text), DEFAULT_SETTINGS), text).toBe(false);
+    }
+    expect(shouldHide(classifyLocally("You are an idiot"), DEFAULT_SETTINGS)).toBe(true);
+  });
+  it.each(["مش هقتلك، خلينا نتكلم بهدوء", "انا مش هضربك", "مش هكسرك ولا هأذيك"])(
+    "does not treat an explicitly negated Egyptian threat as a threat: %s",
+    (text) => expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("threats")
+  );
+  it("keeps an unnegated Egyptian threat detectable", () => {
+    expect(classifyLocally("هقتلك لو قربت").labels.map((label) => label.category)).toContain("threats");
+  });
+  it("does not classify an Arabic reported threat as the author's threat", () => {
+    expect(classifyLocally("التقرير نقل عنه قوله: سوف اقتلك").labels).toEqual([]);
+  });
   it("detects a narrow direct English insult example", () => {
     expect(classifyLocally("You are an idiot").labels.map((label) => label.category)).toContain("harassment");
   });
@@ -27,20 +159,23 @@ describe("classifyLocally", () => {
 
 describe("shouldHide", () => {
   it("does not hide when filtering is disabled", () => {
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.99 }], provider: "test" }, {
+    expect(shouldHide(localScore("harassment", 0.99), {
       ...DEFAULT_SETTINGS, enabled: false
     })).toBe(false);
   });
   it("respects category selection and threshold", () => {
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.70 }], provider: "test" }, {
+    expect(shouldHide(localScore("harassment", 0.70), {
       ...DEFAULT_SETTINGS, threshold: 0.85
     })).toBe(false);
   });
 });
 
-it("rejects unknown remote categories and invalid scores", () => {
-  expect(isUsableRemoteClassification({ labels: [{ category: "misinformation", score: 0.9 }], provider: "test" })).toBe(false);
-  expect(isUsableRemoteClassification({ labels: [{ category: "spam", score: 8 }], provider: "test" })).toBe(false);
+it("rejects non-local classification results before they can affect policy", () => {
+  const remoteLike = { labels: [{ category: "harassment", score: 0.99 }], provider: "remote-test" } as unknown as Classification;
+  const localWithoutEvidence = { labels: [{ category: "harassment", score: 0.99 }], provider: "local-heuristic" } as unknown as Classification;
+  expect(decidePolicy(remoteLike, DEFAULT_SETTINGS)).toMatchObject({ action: "ALLOW", reason: "non-local-classification" });
+  expect(decidePolicy(localWithoutEvidence, DEFAULT_SETTINGS)).toMatchObject({ action: "ALLOW", reason: "non-local-classification" });
+  expect(shouldHide(remoteLike, DEFAULT_SETTINGS)).toBe(false);
 });
 
 describe("regression and decision boundaries", () => {
@@ -53,19 +188,17 @@ describe("regression and decision boundaries", () => {
     }
   });
   it("applies the threshold as an inclusive boundary", () => {
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.85 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.85 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: 0.86 })).toBe(false);
+    expect(shouldHide(localScore("harassment", 0.85), { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+    expect(shouldHide(localScore("harassment", 0.85), { ...DEFAULT_SETTINGS, threshold: 0.86 })).toBe(false);
   });
   it("refuses invalid thresholds and out-of-range scores", () => {
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.99 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: Number.NaN })).toBe(false);
-    expect(shouldHide({ labels: [{ category: "harassment", score: 2 }], provider: "test" }, DEFAULT_SETTINGS)).toBe(false);
-    expect(shouldHide({ labels: [{ category: "harassment", score: Number.NaN }], provider: "test" }, DEFAULT_SETTINGS)).toBe(false);
-    expect(shouldHide({ labels: [{ category: "harassment", score: 0.99 }], provider: "test" }, { ...DEFAULT_SETTINGS, threshold: 2 })).toBe(false);
+    expect(shouldHide(localScore("harassment", 0.99), { ...DEFAULT_SETTINGS, threshold: Number.NaN })).toBe(false);
+    expect(shouldHide(localScore("harassment", 2), DEFAULT_SETTINGS)).toBe(false);
+    expect(shouldHide(localScore("harassment", Number.NaN), DEFAULT_SETTINGS)).toBe(false);
+    expect(shouldHide(localScore("harassment", 0.99), { ...DEFAULT_SETTINGS, threshold: 2 })).toBe(false);
   });
-  it("ignores disabled categories and malformed remote payloads", () => {
-    expect(shouldHide({ labels: [{ category: "spam", score: 0.99 }], provider: "test" }, { ...DEFAULT_SETTINGS, enabledCategories: ["harassment"] })).toBe(false);
-    expect(isUsableRemoteClassification({ labels: [{ category: "harassment", score: Number.NaN }], provider: "test" })).toBe(false);
-    expect(isUsableRemoteClassification({ labels: [], provider: 42 })).toBe(false);
+  it("ignores disabled local categories", () => {
+    expect(shouldHide(localScore("spam", 0.99), { ...DEFAULT_SETTINGS, enabledCategories: ["harassment"] })).toBe(false);
   });
 });
 
@@ -140,21 +273,47 @@ describe("live Egyptian Arabic standalone put-down regression", () => {
   });
 });
 
+describe("Egyptian vocative profanity and personal-target controls", () => {
+  it.each(["يا علق", "يا عِلْق!", "انت علق", "إنت علق، ركز", "غبي", "فاشل"])(
+    "classifies the reported direct insult form: %s",
+    (text) => expect(classifyLocally(text).labels.map((label) => label.category)).toContain("harassment")
+  );
+  it.each([
+    "كلمة علق شتيمة ومش مناسبة",
+    "هو كتب لها: يا علق",
+    "متقولش لحد يا علق",
+    "أنا مختلف معاك في الرأي",
+    "رأيك مش دقيق ومحتاج دليل",
+    "أنا مختلف معاك، وعندي أدلة على رأيي",
+    "تحليلك مش دقيق ومحتاج مصادر أقوى",
+    "الكود فاشل ومحتاج إعادة كتابة",
+    "الشرح ضعيف ومش واضح",
+    "الفشل بنفسه",
+    "فاشل ادج"
+  ])("keeps discussion, reporting, criticism, or ambiguous form visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+});
+
 describe("Arabic bullying, mockery, and personal put-downs", () => {
   it.each([
     "انت غبي",
     "إنت أهبل",
     "يا متخلف",
-    "يا حقير",
-    "عبقري زمانك",
-    "يا سلام على الذكاء",
-    "ما شاء الله على الفهم",
-    "فاهم اوي"
-  ])("flags a targeted bullying or mockery phrase: %s", (text) => {
+    "يا حقير"
+  ])("hides an explicit targeted insult: %s", (text) => {
     const result = classifyLocally(text);
     expect(result.labels.map((label) => label.category)).toContain("harassment");
     expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
   });
+
+  it.each(["عبقري زمانك", "يا سلام على الذكاء", "ما شاء الله على الفهم", "فاهم اوي"])(
+    "keeps ambiguous mockery visible for review: %s", (text) => {
+      const result = classifyLocally(text);
+      expect(result.labels.map((label) => label.category)).toContain("harassment");
+      expect(decidePolicy(result, DEFAULT_SETTINGS).action).toBe("REVIEW");
+      expect(shouldHide(result, DEFAULT_SETTINGS)).toBe(false);
+    });
 
   it.each([
     "أنا مختلف معاك في الرأي",
@@ -205,5 +364,267 @@ describe("normalization contract for rule authors", () => {
     expect(normalizeForRules("إِنْتَ")).toBe("انت");
     expect(normalizeForRules("غــبــي")).toBe("غبي");
     expect(normalizeForRules("سوف\u200B أقتلك")).toBe("سوف اقتلك");
+  });
+});
+
+describe("V8 third-person authored abuse", () => {
+  it.each([
+    "He's pathetic.",
+    "She is such a moron.",
+    "He's a total clown.",
+    "I told him he's an idiot.",
+    "She said the presentation was weak. He's an idiot.",
+    "هو غبي.",
+    "هي فاشلة في شغلها.",
+    "وهو اهبل كمان."
+  ])("hides third-person authored personal abuse: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "His code is pathetic.",
+    "The design he's proposing is stupid.",
+    "She thinks he's an idiot.",
+    "He believes she's a moron.",
+    "الكود اللي كتبه فاشل.",
+    "هي متحمسة بس المشروع فاشل.",
+    "هو مش غبي، بس بيهرب من المسؤولية.",
+    "Her design is a joke.",
+    "He is the manager and she is the engineer.",
+    "He's hopeless at presentations."
+  ])("keeps object, idea, attributed, negated, and factual third-person text visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+
+  it("keeps first-person cognition authored while hiding its insult", () => {
+    const result = classifyLocally("I think you're an idiot.");
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, DEFAULT_SETTINGS)).toBe(true);
+  });
+
+  it("keeps first-person cognition about a third person visible", () => {
+    expect(classifyLocally("I believe he is a good teammate.").labels).toEqual([]);
+  });
+});
+
+describe("V9 additional injury constructions", () => {
+  it.each([
+    "I'm going to choke you if you come closer.",
+    "I'll knock your teeth out.",
+    "I will break his face.",
+    "هخنقك لو رجعت تاني.",
+    "هخنقها لو قربت من البيت.",
+    "I'm going to choke you لو قربت."
+  ])("hides a first-person injury threat with a human object: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("threats");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "This update will knock your socks off.",
+    "I'll choke on my coffee if I eat too fast.",
+    "We need to break the build before release.",
+    "I'm going to break your fall with this cushion.",
+    "مش هخنقك، خلينا نحل المشكلة بالكلام.",
+    "ما هخنقكش، أنا عايز أتكلم.",
+    "قال هخنقك لو رجعت للشارع ده.",
+    "هخنق العملية دي لو علقت.",
+    "She said she would choke you.",
+    "The hero will choke the villain in the final scene.",
+    "I'm going to choke the noise with this cushion."
+  ])("keeps idioms, negation, reports, technical and non-human objects visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("threats");
+  });
+
+  it("keeps existing threat rule IDs stable and assigns the new appended IDs", () => {
+    expect(classifyLocally("I'll break your jaw.").matches.map((match) => match.ruleId)).toContain("threats.en-body-part-injury");
+    expect(classifyLocally("هقتلك.").matches.map((match) => match.ruleId)).toContain("threats.ar-future-harm-second");
+    expect(classifyLocally("I'll choke you.").matches.map((match) => match.ruleId)).toContain("threats.en-additional-injury");
+    expect(classifyLocally("هخنقك.").matches.map((match) => match.ruleId)).toContain("threats.ar-choke-injury");
+  });
+});
+
+describe("V10 spam co-occurrence with expanded private-contact cues", () => {
+  it.each([
+    "You won a free prize! DM me in private to claim it.",
+    "مبروك كسبت الجائزة، كلمني على الخاص عشان تستلمها.",
+    "Congratulations, you won a reward! Message me privately to collect.",
+    "You have won a prize, dm me in private to claim your reward.",
+    "مبروك كسبت جائزة، راسلني على الخاص عشان تستلم الفلوس."
+  ])("hides the reward + private contact + claim triad: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("spam");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "DM me the room number before the lecture.",
+    "I won a prize at the school fair and collected it yesterday.",
+    "I won a prize at the raffle; message me privately to say hi.",
+    "ابعتلي موقع القاعة على الخاص لو سمحت.",
+    "Congratulations on winning the school prize, collect your certificate from the office.",
+    "He sent me the prize details; I collected them yesterday."
+  ])("keeps logistics, past prizes, and two-of-three cases visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("spam");
+  });
+
+  it("keeps prize-only congratulations at contextual review", () => {
+    const result = classifyLocally("مبروك كسبت الجائزة في سحب المدرسة، كلمني على الخاص عشان نهنئك.");
+    expect(result.labels.map((label) => label.category)).toContain("spam");
+    expect(decidePolicy(result, DEFAULT_SETTINGS).action).toBe("REVIEW");
+  });
+
+  it("assigns the appended spam rule its verified ID", () => {
+    expect(classifyLocally("You won a prize! DM me in private to claim it.").matches.map((match) => match.ruleId)).toContain("spam.expanded-private-contact-triad");
+  });
+});
+
+describe("V11 bounded repeated-letter normalization and idot alias", () => {
+  it.each([
+    "You are an idiooot!!!",
+    "You're pathhhhetic.",
+    "He's dummmb.",
+    "انت غبييي",
+    "وهو اهبللل",
+    "You're an idot."
+  ])("hides a stretched or attested-misspelled insult: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "This is soooo beautiful.",
+    "I loooove this update.",
+    "Yessss, let's do it.",
+    "We are all here.",
+    "You're an idol in my eyes.",
+    "The idot report is on the desk.",
+    "هو فاهممم كل حاجة",
+    "ههههه، قوليلي ايه السبب."
+  ])("keeps benign stretches, doubled letters, and untargeted aliases visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+
+  it("collapses only runs of three or more identical letters", () => {
+    expect(normalizeForRules("idiooot")).toBe("idiot");
+    expect(normalizeForRules("غبييي")).toBe("غبي");
+    expect(normalizeForRules("all")).toBe("all");
+    expect(normalizeForRules("coffee and success")).toBe("coffee and success");
+  });
+
+  it("assigns the reviewed idot alias its verified ID", () => {
+    expect(classifyLocally("You're an idot.").matches.map((match) => match.ruleId)).toContain("harassment.en-idot-alias");
+  });
+});
+
+describe("V12 Arabizi personal-abuse grammar", () => {
+  it.each([
+    "enta 7mar, khalas.",
+    "inti ghabia w mesh betefhami",
+    "enta fashel fel shoghl",
+    "howa fashel, matla3sh out.",
+    "enta ahbal يا حمار",
+    "heya 7mara w maskhara."
+  ])("hides reviewed Arabizi insults with personal targets: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "mish enta 7mar, ana bamzah.",
+    "howa 2al enta 7mar, bas ana mesh.",
+    "el project fashel w moshkel.",
+    "ana 7mar, ana asfal.",
+    "howa engineer w heya doctor.",
+    "el 7mar fi el mazra3a.",
+    "mesh inti ghabia, ana 3ayez atfahm.",
+    "heya 2alet howa 7mar.",
+    "The design is stupid."
+  ])("keeps negation, reports, objects, self-description, and literal uses visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+
+  it("assigns the appended Arabizi rules their verified IDs", () => {
+    expect(classifyLocally("enta 7mar.").matches.map((match) => match.ruleId)).toContain("harassment.arabizi-second-person-insult");
+    expect(classifyLocally("howa fashel.").matches.map((match) => match.ruleId)).toContain("harassment.arabizi-third-person-insult");
+  });
+});
+
+describe("V13 plural and past-tense personal abuse", () => {
+  it.each([
+    "They're idiots.",
+    "they are pathetic",
+    "He was a moron.",
+    "She was worthless.",
+    "They were clowns.",
+    "He was such a loser."
+  ])("hides plural/past-tense personal abuse: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "They're engineers.",
+    "He was the manager.",
+    "They're designing the new API.",
+    "Their code is pathetic.",
+    "They're not idiots.",
+    "He wasn't stupid.",
+    "She said they're idiots.",
+    "Their ideas are stupid.",
+    "They weren't clowns."
+  ])("keeps facts, negation, reports, and object criticism visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+
+  it("assigns the appended plural/past rule its verified ID", () => {
+    expect(classifyLocally("They're idiots.").matches.map((match) => match.ruleId)).toContain("harassment.en-plural-past-insult");
+  });
+});
+
+describe("V14 negation guard for legacy Arabizi patterns", () => {
+  it.each([
+    "enta ghaby",
+    "inti ahbal",
+    "enta faker",
+    "mish ana ghaby, enta ghaby."
+  ])("still hides unnegated or clause-locally-affirmed insults: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "mish enta ghaby, ana bamzah.",
+    "mesh enta faker, ana 3ayez atfahm.",
+    "msh inti ghaby.",
+    "mish entu ahbal.",
+    "mish enta ghaby w mesh enta faker.",
+    "I'm not an idiot."
+  ])("keeps explicitly negated insults visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+
+  it("keeps the guarded legacy rule IDs unchanged", () => {
+    const ids = classifyLocally("enta ghaby").matches.map((match) => match.ruleId);
+    expect(ids).toContain("harassment.arabizi-legacy-ghaby");
+    expect(classifyLocally("enta faker").matches.map((match) => match.ruleId)).toContain("harassment.arabizi-legacy-faker");
+  });
+});
+
+describe("semantic rule IDs", () => {
+  it("has exactly one unique, category-prefixed ID per pattern", () => {
+    for (const category of CATEGORIES) {
+      const ids = RULE_IDS[category];
+      expect(ids).toHaveLength(patternCount(category));
+      expect(new Set(ids).size).toBe(ids.length);
+      for (const id of ids) expect(id.startsWith(`${category}.`)).toBe(true);
+    }
   });
 });

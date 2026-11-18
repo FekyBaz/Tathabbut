@@ -1,0 +1,42 @@
+{
+  "version":"3.0.0",
+  "split":"frozen-test",
+  "provenance":"Synthetic examples authored separately from v3 development on 2026-10-27, before v3 rule edits; no real-user or scraped text. Same implementation author, not independent human annotation. Do not tune rules against this split.",
+  "items":[
+    {"id":"v3t-h-en-p1","primaryCategory":"harassment","lang":"en","status":"clear","text":"You are a worthless excuse for a teammate.","expect":["harassment"],"rationale":"Direct personal degradation aimed at the addressee."},
+    {"id":"v3t-h-en-n1","primaryCategory":"harassment","lang":"en","status":"clear","text":"Your migration plan ignores the rollback path.","expect":[],"rationale":"Criticizes a plan, not a person."},
+    {"id":"v3t-h-ar-p1","primaryCategory":"harassment","lang":"ar","status":"clear","text":"انت فاشل ومحدش بيصدقك","expect":["harassment"],"rationale":"Direct personal put-down in Egyptian Arabic."},
+    {"id":"v3t-h-ar-n1","primaryCategory":"harassment","lang":"ar","status":"clear","text":"النتيجة دي مش دقيقة وعايزة مصدر","expect":[],"rationale":"Criticizes a claim and asks for a source."},
+    {"id":"v3t-h-mix-p1","primaryCategory":"harassment","lang":"mixed","status":"clear","text":"You're a loser، stop wasting everyone's time.","expect":["harassment"],"rationale":"English personal insult directed at a participant."},
+    {"id":"v3t-h-mix-n1","primaryCategory":"harassment","lang":"mixed","status":"clear","text":"The checkout flow بطيء وبيحتاج تحسين.","expect":[],"rationale":"Negative review of a product flow, not personal abuse."},
+    {"id":"v3t-h-ab-p1","primaryCategory":"harassment","lang":"arabizi","status":"clear","text":"enta ghaby w kalamak malosh ay lazma","expect":["harassment"],"rationale":"Direct Arabizi insult and belittling."},
+    {"id":"v3t-h-ab-n1","primaryCategory":"harassment","lang":"arabizi","status":"clear","text":"el result mesh de2ee2a w محتاجة source","expect":[],"rationale":"Critiques a result and requests evidence."},
+
+    {"id":"v3t-t-en-p1","primaryCategory":"threats","lang":"en","status":"clear","text":"I am going to hurt you if you contact her again.","expect":["threats"],"rationale":"Direct stated intent to harm a person."},
+    {"id":"v3t-t-en-n1","primaryCategory":"threats","lang":"en","status":"clear","text":"I could never hurt you; I want to help.","expect":[],"rationale":"Explicitly denies intent to harm."},
+    {"id":"v3t-t-ar-p1","primaryCategory":"threats","lang":"ar","status":"clear","text":"هضربك لو رجعت هنا","expect":["threats"],"rationale":"Direct Egyptian Arabic physical threat."},
+    {"id":"v3t-t-ar-n1","primaryCategory":"threats","lang":"ar","status":"clear","text":"ما هأذيك، أنا بنصحك بس","expect":[],"rationale":"Explicitly negates intent to harm."},
+    {"id":"v3t-t-mix-p1","primaryCategory":"threats","lang":"mixed","status":"clear","text":"I'll attack you لو كملت كده.","expect":["threats"],"rationale":"Direct English threat with Arabic condition."},
+    {"id":"v3t-t-mix-n1","primaryCategory":"threats","lang":"mixed","status":"clear","text":"The article quotes him saying 'I will attack you'.","expect":[],"rationale":"Attributed quotation in an article, not author intent."},
+    {"id":"v3t-t-ab-p1","primaryCategory":"threats","lang":"arabizi","status":"clear","text":"hadrabak law te2rab tany","expect":["threats"],"rationale":"Arabizi direct future threat of physical harm."},
+    {"id":"v3t-t-ab-n1","primaryCategory":"threats","lang":"arabizi","status":"clear","text":"howa 2al hadrabak law terga3, bas ana mesh 2ased a2olak keda","expect":[],"rationale":"Unnegated threat phrase is attributed to another speaker, not the author."},
+
+    {"id":"v3t-hate-en-p1","primaryCategory":"hate","lang":"en","status":"clear","text":"All Arabs are vermin and should be removed.","expect":["hate"],"rationale":"Dehumanizes an ethnic identity group and advocates exclusion."},
+    {"id":"v3t-hate-en-n1","primaryCategory":"hate","lang":"en","status":"clear","text":"I reject the nationalist party's platform.","expect":[],"rationale":"Criticizes a political platform, not an identity group."},
+    {"id":"v3t-hate-ar-p1","primaryCategory":"hate","lang":"ar","status":"clear","text":"كل المسلمين حشرات ولازم يطردوهم","expect":["hate"],"rationale":"Dehumanizes and advocates exclusion of a religious group."},
+    {"id":"v3t-hate-ar-n1","primaryCategory":"hate","lang":"ar","status":"clear","text":"أنا ضد سياسة الحزب تجاه الأقليات","expect":[],"rationale":"Criticizes a party policy, not people by identity."},
+    {"id":"v3t-hate-mix-p1","primaryCategory":"hate","lang":"mixed","status":"clear","text":"Women are inferior وأقل من البشر ومينفعش يتعلموا.","expect":["hate"],"rationale":"Demeans women as an identity group and advocates exclusion."},
+    {"id":"v3t-hate-mix-n1","primaryCategory":"hate","lang":"mixed","status":"clear","text":"I disagree with the group's education proposal ومش معترض على الناس.","expect":[],"rationale":"Disagrees with a proposal and explicitly not the people."},
+    {"id":"v3t-hate-ab-p1","primaryCategory":"hate","lang":"arabizi","status":"clear","text":"kol el moslimeen 7asharat w lazm yetmana3o","expect":["hate"],"rationale":"Arabizi dehumanization and exclusion targeting a religious group."},
+    {"id":"v3t-hate-ab-n1","primaryCategory":"hate","lang":"arabizi","status":"clear","text":"ana ba5alef el group fel ra2y mesh fel nas","expect":[],"rationale":"Disagrees with a group's view while distinguishing it from people."},
+
+    {"id":"v3t-s-en-p1","primaryCategory":"spam","lang":"en","status":"clear","text":"Guaranteed profit! DM me to claim your prize now.","expect":["spam"],"rationale":"Unsolicited guaranteed-profit and prize solicitation."},
+    {"id":"v3t-s-en-n1","primaryCategory":"spam","lang":"en","status":"clear","text":"DM me the room number before the lecture.","expect":[],"rationale":"Ordinary logistical message request."},
+    {"id":"v3t-s-ar-p1","primaryCategory":"spam","lang":"ar","status":"clear","text":"مبروك كسبت الجائزة ابعتلي بياناتك للاستلام","expect":["spam"],"rationale":"Prize bait solicits personal details for a claim."},
+    {"id":"v3t-s-ar-n1","primaryCategory":"spam","lang":"ar","status":"clear","text":"ابعتلي موقع القاعة على الخاص لو سمحت","expect":[],"rationale":"Ordinary request to send a location privately."},
+    {"id":"v3t-s-mix-p1","primaryCategory":"spam","lang":"mixed","status":"clear","text":"You won a prize! ابعتلي رسالة خاصة عشان تستلم المكافأة.","expect":["spam"],"rationale":"Mixed-language reward bait requests a private claim action."},
+    {"id":"v3t-s-mix-n1","primaryCategory":"spam","lang":"mixed","status":"clear","text":"I won a prize في سحب المدرسة واستلمته امبارح.","expect":[],"rationale":"Describes a past school prize without requesting engagement."},
+    {"id":"v3t-s-ab-p1","primaryCategory":"spam","lang":"arabizi","status":"clear","text":"enta kasabt prize, eb3atly private 3ashan testalem el reward","expect":["spam"],"rationale":"Arabizi prize bait requests a private claim action."},
+    {"id":"v3t-s-ab-n1","primaryCategory":"spam","lang":"arabizi","status":"clear","text":"ana kasabt prize fel school fair w ro7t estalemha","expect":[],"rationale":"Reports a completed school prize with no solicitation."}
+  ]
+}

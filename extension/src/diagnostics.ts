@@ -9,11 +9,12 @@ export interface ContentStatus {
   enabled: boolean;
   threshold: number;
   categories: number;
-  apiMode: "local" | "remote";
   articlesFound: number;
   evaluated: number;
   classified: number;
   hidden: number;
+  hideFailed?: number;
+  noRuleMatch?: number;
   skipped: number;
   skippedUnchanged: number;
   skippedEmpty: number;
@@ -31,11 +32,14 @@ const REASON_TEXT_EN: Record<string, string> = {
   "rule-match": "A rule matched and the item was hidden.",
   "no-rule-match": "No rule matched the text.",
   "below-threshold": "A rule matched, but its score is under the threshold.",
+  "contextual-rule-match": "A contextual rule matched; the item stayed visible for review.",
   "category-disabled": "The matched category is switched off.",
   "filter-disabled": "Filtering is switched off.",
   "empty-text": "The item had no readable text.",
   "unchanged": "The item did not change since the last check.",
   "queue-full": "The work queue was full; the item will retry on the next change.",
+  "hide-failed": "A policy match could not be hidden because the page DOM rejected the update.",
+  "user-revealed": "The user revealed this item; it stays visible until its text or settings change.",
   "starting": "The content script has not finished its first check yet."
 };
 
@@ -43,11 +47,14 @@ const REASON_TEXT_AR: Record<string, string> = {
   "rule-match": "طابقت قاعدة وأُخفي العنصر.",
   "no-rule-match": "لا قاعدة طابقت النص.",
   "below-threshold": "طابقت قاعدة لكن درجتها تحت العتبة.",
+  "contextual-rule-match": "طابقت قاعدة سياقية؛ تُرك المحتوى ظاهرًا للمراجعة.",
   "category-disabled": "الفئة المطابَقة مغلقة.",
   "filter-disabled": "التصفية مغلقة.",
   "empty-text": "العنصر بلا نص مقروء.",
   "unchanged": "العنصر لم يتغير منذ آخر فحص.",
   "queue-full": "طابور العمل كان ممتلئًا؛ سيُعاد العنصر مع التغيير التالي.",
+  "hide-failed": "طابقت السياسة لكن تعذر إخفاء العنصر لأن الصفحة رفضت تعديل DOM.",
+  "user-revealed": "أظهر المستخدم هذا العنصر؛ يبقى ظاهرًا حتى يتغير نصه أو الإعدادات.",
   "starting": "سكربت المحتوى لم يُنه الفحص الأول بعد."
 };
 
@@ -158,11 +165,13 @@ export function statusViewModel(
       ? snapshot.skippedUnchanged + " بلا تغيير · " +
         snapshot.skippedEmpty + " فارغ · " +
         snapshot.skippedDisabled + " والتصفية مغلقة · " +
-        snapshot.skippedQueueFull + " ازدحام الطابور"
+        snapshot.skippedQueueFull + " ازدحام الطابور · " +
+        (snapshot.hideFailed ?? 0) + " فشل إخفاء"
       : snapshot.skippedUnchanged + " unchanged · " +
         snapshot.skippedEmpty + " empty · " +
         snapshot.skippedDisabled + " disabled · " +
-        snapshot.skippedQueueFull + " queue-full",
+        snapshot.skippedQueueFull + " queue-full · " +
+        (snapshot.hideFailed ?? 0) + " hide-failed",
     updated: formatStatusAge(snapshot.updatedAt, lang, now),
     source: snapshot.origin || (lang === "ar" ? "موقع غير معروف" : "unknown site")
   };
@@ -183,8 +192,8 @@ export function statusViewModel(
     settings: snapshot.settingsOk
       ? (snapshot.enabled
         ? (lang === "ar" ? "مفعّل" : "on")
-        : (lang === "ar" ? "مغلق" : "off")) + " · " + snapshot.apiMode + " · " +
-        snapshot.categories + (lang === "ar" ? " فئات · العتبة " : " categories · threshold ") + snapshot.threshold
+        : (lang === "ar" ? "مغلق" : "off")) + " · " + snapshot.categories +
+        (lang === "ar" ? " فئات · العتبة " : " categories · threshold ") + snapshot.threshold
       : (lang === "ar" ? "الافتراضيات (تعذرت قراءة التخزين)" : "defaults (storage read failed)")
   };
 }

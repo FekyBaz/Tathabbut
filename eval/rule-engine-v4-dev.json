@@ -1,0 +1,463 @@
+{
+  "version": "4.0.0",
+  "split": "development",
+  "provenance": "Synthetic challenge set; independently drafted by split by the task author, but no second annotator was available. No scraped or real-user text.",
+  "items": [
+    {
+      "id": "v4d-harassment-en-1",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "You are a clueless fraud.",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal degradation.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-harassment-en-2",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "This patch is careless and breaks the parser.",
+      "expect": [],
+      "rationale": "Criticism targets the patch and its behavior.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-harassment-ar-3",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "انت غبي ومش فاهم حاجة",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct Egyptian Arabic personal insult.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-harassment-ar-4",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "الشرح ناقص ومحتاج أمثلة أوضح",
+      "expect": [],
+      "rationale": "Criticism targets an explanation.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-harassment-mixed-5",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "You are أهبل وبتضيع وقتنا",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Mixed-language personal insult.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-harassment-mixed-6",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "Your argument ضعيف ومفيهوش دليل",
+      "expect": [],
+      "rationale": "Criticizes an argument.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-harassment-arabizi-7",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "enta ahbal w mesh betefham",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct Arabizi insult.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-harassment-arabizi-8",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el design s3b fel mobile w محتاج تعديل",
+      "expect": [],
+      "rationale": "Criticizes design, not a person.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-en-9",
+      "primaryCategory": "hate",
+      "lang": "en",
+      "status": "clear",
+      "text": "Immigrants are vermin and should be driven out.",
+      "expect": [
+        "hate"
+      ],
+      "rationale": "Dehumanizes and advocates excluding an identity group.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-en-10",
+      "primaryCategory": "hate",
+      "lang": "en",
+      "status": "clear",
+      "text": "The immigrant policy is expensive and poorly designed.",
+      "expect": [],
+      "rationale": "Criticizes policy, not people.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-en-11",
+      "primaryCategory": "hate",
+      "lang": "en",
+      "status": "clear",
+      "text": "My neighbors are Muslim.",
+      "expect": [],
+      "rationale": "Mere identity mention.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-en-12",
+      "primaryCategory": "hate",
+      "lang": "en",
+      "status": "clear",
+      "text": "Muslims deserve equal rights, not exclusion.",
+      "expect": [],
+      "rationale": "Counters hate and supports equal rights.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-ar-13",
+      "primaryCategory": "hate",
+      "lang": "ar",
+      "status": "clear",
+      "text": "المهاجرين حشرات ولازم يطردوهم",
+      "expect": [
+        "hate"
+      ],
+      "rationale": "Dehumanizes and advocates exclusion based on identity.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-ar-14",
+      "primaryCategory": "hate",
+      "lang": "ar",
+      "status": "clear",
+      "text": "سياسة الهجرة دي مكلفة ومش عملية",
+      "expect": [],
+      "rationale": "Criticizes policy.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-ar-15",
+      "primaryCategory": "hate",
+      "lang": "ar",
+      "status": "clear",
+      "text": "جاري مسلم وبيشتغل مهندس",
+      "expect": [],
+      "rationale": "Mere identity mention.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-ar-16",
+      "primaryCategory": "hate",
+      "lang": "ar",
+      "status": "clear",
+      "text": "المسلمين زي غيرهم من حقهم يعيشوا بأمان",
+      "expect": [],
+      "rationale": "Affirms equal safety.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-mixed-17",
+      "primaryCategory": "hate",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "Refugees are حشرات and should be removed.",
+      "expect": [
+        "hate"
+      ],
+      "rationale": "Dehumanizes and advocates exclusion.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-mixed-18",
+      "primaryCategory": "hate",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "I oppose the party policy تجاه اللاجئين",
+      "expect": [],
+      "rationale": "Criticizes policy.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-mixed-19",
+      "primaryCategory": "hate",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "My colleague مسيحي and works in QA",
+      "expect": [],
+      "rationale": "Mere identity mention.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-mixed-20",
+      "primaryCategory": "hate",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "People with disabilities لهم حق المشاركة زي الجميع",
+      "expect": [],
+      "rationale": "Affirms inclusion.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-arabizi-21",
+      "primaryCategory": "hate",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el mo7agreen 7asharat w lazm yet6erdo",
+      "expect": [
+        "hate"
+      ],
+      "rationale": "Arabizi dehumanization and exclusion of national-origin group.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-arabizi-22",
+      "primaryCategory": "hate",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "ana ba5alef el policy mesh el nas",
+      "expect": [],
+      "rationale": "Separates policy criticism from people.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-arabizi-23",
+      "primaryCategory": "hate",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "sa7by muslim w by7eb el coding",
+      "expect": [],
+      "rationale": "Mere identity mention.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-hate-arabizi-24",
+      "primaryCategory": "hate",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el nas kolaha leha nafs el 7o2ou2",
+      "expect": [],
+      "rationale": "Affirms equal rights.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-25",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "I'll break your jaw if you come back.",
+      "expect": [
+        "threats"
+      ],
+      "rationale": "First-person future intent to injure addressee body part.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-26",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "I will not break your jaw; I want to talk.",
+      "expect": [],
+      "rationale": "Explicit negation.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-27",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "The article quotes him: “I will break your nose.”",
+      "expect": [],
+      "rationale": "Reported quotation, not endorsed.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-28",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "We need to break the build before release.",
+      "expect": [],
+      "rationale": "Technical use of break.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-29",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "Break a leg at the show tonight!",
+      "expect": [],
+      "rationale": "Idiomatic well-wish.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-45",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "He joked, ‘I will break your jaw,’ as part of a comedy sketch.",
+      "expect": [],
+      "rationale": "The quoted threat is explicitly framed as a joke in a performance, not endorsed intent.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-30",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "She said she would break his jaw.",
+      "expect": [],
+      "rationale": "Reported speech.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-spam-arabizi-31",
+      "primaryCategory": "spam",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "enta kasabt el reward, eb3atli private 3ashan testalemha",
+      "expect": [
+        "spam"
+      ],
+      "rationale": "Prize claim solicitation requests private contact and collection.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-spam-arabizi-33",
+      "primaryCategory": "spam",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "enta kasabt prize fel madrasa embare7 w estalemto",
+      "expect": [],
+      "rationale": "Reports past school prize, no solicitation.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-spam-arabizi-34",
+      "primaryCategory": "spam",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "Congrats on your prize! التسجيل مفتوح لكل الناس بدون DM",
+      "expect": [],
+      "rationale": "Public legitimate promotion; no private claim request.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-spam-arabizi-35",
+      "primaryCategory": "spam",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "eb3atly private 3ashan ab3atlak el address",
+      "expect": [],
+      "rationale": "Benign private logistics without prize bait.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-spam-arabizi-36",
+      "primaryCategory": "spam",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "howa kasab prize fel contest w estalem el reward",
+      "expect": [],
+      "rationale": "Reports another person’s completed prize.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-37",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "I will smash your nose if you approach me.",
+      "expect": [
+        "threats"
+      ],
+      "rationale": "First-person intent to injure a body part.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-38",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "I could break your jaw in the game, but this is fictional dialogue.",
+      "expect": [],
+      "rationale": "Explicitly fictional context; sentence is not endorsed.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-39",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "I promise I will break your arm if you touch my car.",
+      "expect": [
+        "threats"
+      ],
+      "rationale": "Explicit first-person conditional intent to injure.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-threats-en-40",
+      "primaryCategory": "threats",
+      "lang": "en",
+      "status": "clear",
+      "text": "I will break the build, not anyone’s bones.",
+      "expect": [],
+      "rationale": "Object target and explicit contrast, not a person.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-spam-arabizi-41",
+      "primaryCategory": "spam",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "enta kasabt el flos, eb3atly private 3ashan testalem el bonus",
+      "expect": [
+        "spam"
+      ],
+      "rationale": "Prize solicitation with reward, private contact, and claim action.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-spam-arabizi-43",
+      "primaryCategory": "spam",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "enta kasabt prize w ابعتلي خاص بس عشان احكيلك النتيجة",
+      "expect": [],
+      "rationale": "Private contact follows a prize mention but has no prize collection action.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    },
+    {
+      "id": "v4d-spam-arabizi-44",
+      "primaryCategory": "spam",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "eb3atli private 3ashan ab3atlak el file elly oltlak 3aleh",
+      "expect": [],
+      "rationale": "Ordinary private request without prize solicitation.",
+      "provenance": "Synthetic V4 item, authored by task author on 2026-10-28; not independently human-reviewed."
+    }
+  ]
+}

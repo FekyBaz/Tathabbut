@@ -1,0 +1,175 @@
+{
+  "version": "5.1.0",
+  "split": "frozen-test",
+  "provenance": "Synthetic, separate test candidate frozen before V5b rule edit. Single-author; not independently reviewed. Do not tune on it.",
+  "items": [
+    {
+      "id": "v5t2-harassment-1",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "You are a total joke of a manager.",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal degradation.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-2",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "The joke in this release is the broken installer.",
+      "expect": [],
+      "rationale": "Criticism of software behavior.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-3",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "This write-up calls the vendor a fraud.",
+      "expect": [],
+      "rationale": "Reported wording.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-4",
+      "primaryCategory": "harassment",
+      "lang": "en",
+      "status": "clear",
+      "text": "That review is dishonest and unsupported.",
+      "expect": [],
+      "rationale": "Negative judgment on a review, not a direct attack.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-5",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "إنت أهبل ومش بتفهم الشغل",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal insult.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-6",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "التطبيق غبي وبيعلق",
+      "expect": [],
+      "rationale": "Product criticism.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-7",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "الحجة دي مش منطقية",
+      "expect": [],
+      "rationale": "Criticism of reasoning.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-8",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "الخدمة سيئة ومش بترد",
+      "expect": [],
+      "rationale": "Service criticism.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-9",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "إنت fraud وبتضحك على الناس",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct accusation targeting a person.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-10",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "This feature fraudulently يحسب الرسوم",
+      "expect": [],
+      "rationale": "Criticism of product behavior.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-11",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "The argument ضعيف ومحتاج مصدر",
+      "expect": [],
+      "rationale": "Criticism of argument.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-12",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "The label says “you are a fraud” as an example",
+      "expect": [],
+      "rationale": "Quoted educational mention.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-13",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "enta faker w bt2ol ay kalam",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct personal insult.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-14",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el software faker w by3red natayeg ghalat",
+      "expect": [],
+      "rationale": "Product description.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-15",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el response mesh convincing",
+      "expect": [],
+      "rationale": "Criticism of response.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    },
+    {
+      "id": "v5t2-harassment-16",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "howa wasaf el code enno faker",
+      "expect": [],
+      "rationale": "Reported code description, no personal target.",
+      "provenance": "Synthetic, separately drafted V5 test candidate by task author; no independent reviewer; 2026-10-28"
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 // calibrated probabilities. Ambiguous cases stay uncovered by design and
 // are asserted as visible, with the reason noted inline.
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, classifyLocally, shouldHide } from "./policy";
+import { DEFAULT_SETTINGS, classifyLocally, decidePolicy, shouldHide } from "./policy";
 
 const AT_DEFAULT = { ...DEFAULT_SETTINGS };
 const AT_99 = { ...DEFAULT_SETTINGS, threshold: 0.99 };
@@ -50,17 +50,17 @@ describe("direct personal insults", () => {
 
 describe("mockery and sarcastic put-downs", () => {
   it.each([
-    "عبقري زمانك",
-    "أنت عالم زمانك",
-    "يا سلام على الذكاء",
-    "ما شاء الله على الفهم",
-    "فاهم اوي",
-    "فاهمه اوي",
-    "انت فاكر نفسك مين",
-    "إنت فاكر نفسك مين؟"
-  ])("hides a distinctive mockery phrase: %s", (text) => {
+    ["عبقري زمانك", false],
+    ["أنت عالم زمانك", true],
+    ["يا سلام على الذكاء", false],
+    ["ما شاء الله على الفهم", false],
+    ["فاهم اوي", false],
+    ["فاهمه اوي", false],
+    ["انت فاكر نفسك مين", true],
+    ["إنت فاكر نفسك مين؟", true]
+  ] as const)("preserves ambiguous mockery for review, hides explicit targeting: %s", (text, expectedHide) => {
     expect(isHarassment(text)).toBe(true);
-    expect(hides(text)).toBe(true);
+    expect(hides(text)).toBe(expectedHide);
   });
 
   it.each([
@@ -146,7 +146,8 @@ describe("hateful or dehumanizing attacks", () => {
     "flags a dehumanizing group attack: %s",
     (text) => {
       expect(classifyLocally(text).labels.map((l) => l.category)).toContain("hate");
-      expect(hides(text)).toBe(true);
+      expect(decidePolicy(classifyLocally(text), DEFAULT_SETTINGS).action).toBe("REVIEW");
+      expect(hides(text)).toBe(false);
     }
   );
 
@@ -199,7 +200,7 @@ describe("counterspeech stays visible", () => {
 describe("harassment threshold and category behavior", () => {
   it("does not hide mockery at a 99% threshold", () => {
     const result = classifyLocally("يا سلام على الذكاء");
-    expect(shouldHide(result, AT_DEFAULT)).toBe(true);
+    expect(shouldHide(result, AT_DEFAULT)).toBe(false);
     expect(shouldHide(result, AT_99)).toBe(false);
   });
 

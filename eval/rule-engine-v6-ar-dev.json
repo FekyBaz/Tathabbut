@@ -1,0 +1,285 @@
+{
+  "version": "6.0.0",
+  "split": "development",
+  "provenance": "Mixed user-supplied observations and synthetic contrastive cases. Single-author labels; no independent reviewers or adjudication. Ambiguous examples excluded from metrics. No V6 test candidate created.",
+  "items": [
+    {
+      "id": "v6d-harassment-01",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "غبي",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "User-reported standalone personal insult in a comment; exact matching of the reported observation is under test.",
+      "provenance": "Exact user-provided Facebook observation; interpreted as a direct comment-level insult under existing policy. Not a representative sample."
+    },
+    {
+      "id": "v6d-harassment-02",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "فاشل",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "User-reported standalone personal put-down in a comment; target context is supplied by the comment setting.",
+      "provenance": "Exact user-provided Facebook observation; interpreted as a direct comment-level insult under existing policy. Not a representative sample."
+    },
+    {
+      "id": "v6d-harassment-03",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "يا علق",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Egyptian vocative directly addresses the reader with a personal insult.",
+      "provenance": "Exact user-provided Facebook observation; interpreted as a direct comment-level insult under existing policy. Not a representative sample."
+    },
+    {
+      "id": "v6d-harassment-04",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "انت علق",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Second-person direct personal insult.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-05",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "إنت غبي!",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Second-person insult with alef variant and punctuation.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-06",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "يا فاشل، ركز شوية",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Vocative direct insult with punctuation and trailing text.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-07",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "أنا مختلف معاك في الرأي",
+      "expect": [],
+      "rationale": "Respectful disagreement, not personal abuse.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-08",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "رأيك مش دقيق ومحتاج دليل",
+      "expect": [],
+      "rationale": "Critiques a claim and requests evidence.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-09",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "أنا مختلف معاك، وعندي أدلة على رأيي",
+      "expect": [],
+      "rationale": "Disagrees and offers evidence without insulting the person.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-10",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "تحليلك مش دقيق ومحتاج مصادر أقوى",
+      "expect": [],
+      "rationale": "Criticism targets analysis and sources.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-11",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "الكود فاشل ومحتاج إعادة كتابة",
+      "expect": [],
+      "rationale": "Negative adjective targets code, not its author.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-12",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "الشرح ضعيف ومش واضح",
+      "expect": [],
+      "rationale": "Criticism targets an explanation.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-13",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "كلمة علق شتيمة ومش مناسبة في النقاش",
+      "expect": [],
+      "rationale": "Discusses the insult as a word, not directed abuse.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-14",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "هو كتب لها: يا علق",
+      "expect": [],
+      "rationale": "Reports an insult attributed to another speaker.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-15",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "متقولش لحد يا علق",
+      "expect": [],
+      "rationale": "Hypothetical/prohibitive mention; not an adopted personal attack.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-16",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "clear",
+      "text": "المنتج غبي في طريقة حفظ الملفات",
+      "expect": [],
+      "rationale": "Negative product critique; no person is targeted.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-17",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "ambiguous",
+      "text": "الفشل بنفسه",
+      "expect": [],
+      "rationale": "Could be an insult when aimed at a person, but the text alone supplies no target.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-18",
+      "primaryCategory": "harassment",
+      "lang": "ar",
+      "status": "ambiguous",
+      "text": "فاشل ادج",
+      "expect": [],
+      "rationale": "Nonstandard or mistyped final token and no target make the intended insult uncertain.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-19",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "You are أهبل and derailing the work",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct mixed-language insult with English second-person target.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-20",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "إنت fraud ومش نافع في الشغل",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "Direct second-person personal insult in mixed script.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-21",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "The code ده فاشل ومحتاج إعادة كتابة",
+      "expect": [],
+      "rationale": "Criticism of code in mixed text.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-22",
+      "primaryCategory": "harassment",
+      "lang": "mixed",
+      "status": "clear",
+      "text": "Your argument مش دقيق ومحتاج دليل",
+      "expect": [],
+      "rationale": "Criticism of an argument, not a person.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-23",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "enta faker w mesh betefham",
+      "expect": [
+        "harassment"
+      ],
+      "rationale": "V5 development-supported direct Arabizi personal insult.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-24",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el app faker w byb3at data ghalat",
+      "expect": [],
+      "rationale": "Negative Arabizi product description with the same adjective but no personal target.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-25",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "el ra2y da mesh de2ee2 w 3ayez daleel",
+      "expect": [],
+      "rationale": "Criticism of an opinion; no personal abuse.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    },
+    {
+      "id": "v6d-harassment-26",
+      "primaryCategory": "harassment",
+      "lang": "arabizi",
+      "status": "clear",
+      "text": "howa 2al ya ahbal fel comment",
+      "expect": [],
+      "rationale": "Reported speech attributes insult to another person.",
+      "provenance": "Synthetic contrastive case authored for V6; no independent human review."
+    }
+  ]
+}

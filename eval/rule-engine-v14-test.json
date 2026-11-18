@@ -1,0 +1,17 @@
+{
+  "version": "14.0.0",
+  "split": "held-out",
+  "provenance": "Synthetic, single-author challenge items authored before V14 implementation and frozen for this cycle. No independent reviewers or real-world sampling.",
+  "annotationAudit": "None yet. Any post-scoring label correction will be disclosed here without changing texts or split membership.",
+  "items": [
+    {"id":"v14t-ar-enta-ahbal","text":"enta ahbal.","lang":"arabizi","dialect":"egyptian","primaryCategory":"harassment","expect":["harassment"],"expectedAction":"HIDE","status":"clear","contextType":"unnegated-arabizi-insult","targetingEvidence":"Second-person pronoun plus reviewed insult.","rationale":"Legacy positive with a different insult token."},
+    {"id":"v14t-ar-inti-ghaby","text":"inti ghaby.","lang":"arabizi","dialect":"egyptian","primaryCategory":"harassment","expect":["harassment"],"expectedAction":"HIDE","status":"clear","contextType":"unnegated-arabizi-insult","targetingEvidence":"Feminine pronoun plus reviewed insult.","rationale":"Legacy positive control."},
+    {"id":"v14t-ar-entu-ahbal","text":"entu ahbal.","lang":"arabizi","dialect":"egyptian","primaryCategory":"harassment","expect":["harassment"],"expectedAction":"HIDE","status":"clear","contextType":"unnegated-arabizi-insult","targetingEvidence":"Plural pronoun plus reviewed insult.","rationale":"Plural control."},
+    {"id":"v14t-mix-negation-then-affirmed","text":"msh ana faker, enta faker.","lang":"arabizi","dialect":"egyptian","primaryCategory":"harassment","expect":["harassment"],"expectedAction":"HIDE","status":"clear","contextType":"negation-scoped-to-self","targetingEvidence":"Only the self-description is negated; the second clause targets the other person.","rationale":"A narrow guard must remain clause-local."},
+    {"id":"v14t-ar-mesh-enta-ghaby","text":"mesh enta ghaby.","lang":"arabizi","dialect":"egyptian","primaryCategory":"harassment","expect":[],"expectedAction":"ALLOW","status":"clear","contextType":"negated-insult","targetingEvidence":"mesh directly precedes the pronoun.","rationale":"Previously an FP; must stay visible."},
+    {"id":"v14t-ar-mish-enta-faker","text":"mish enta faker, khalina netfahm.","lang":"arabizi","dialect":"egyptian","primaryCategory":"harassment","expect":[],"expectedAction":"ALLOW","status":"clear","contextType":"negated-insult","targetingEvidence":"mish directly precedes the pronoun.","rationale":"Previously an FP; must stay visible."},
+    {"id":"v14t-ar-msh-entu-ghaby","text":"msh entu ghaby.","lang":"arabizi","dialect":"egyptian","primaryCategory":"harassment","expect":[],"expectedAction":"ALLOW","status":"clear","contextType":"negated-insult","targetingEvidence":"msh directly precedes the plural pronoun.","rationale":"Plural negation control."},
+    {"id":"v14t-en-no-insult-control","text":"You are creative.","lang":"en","dialect":"none","primaryCategory":"harassment","expect":[],"expectedAction":"ALLOW","status":"clear","contextType":"benign-control","targetingEvidence":"No insult vocabulary.","rationale":"English control."},
+    {"id":"v14t-ar-joke","text":"enta ahbal 😂 kidding.","lang":"arabizi","dialect":"egyptian","primaryCategory":"harassment","expect":[],"expectedAction":"REVIEW","status":"ambiguous","contextType":"ambiguous-banter","targetingEvidence":"Kidding marker.","rationale":"Documented residual FP risk; excluded from metrics."}
+  ]
+}

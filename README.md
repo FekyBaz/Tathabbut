@@ -1,62 +1,64 @@
 # Tathabbut (تثبّت)
 
-**A privacy-conscious open-source text filter for social feeds.**
+**A privacy-conscious, reversible text filter for Facebook feeds.**
 
-Tathabbut is a Chrome extension that locally hides text matching user-selected categories. The first target is Facebook (facebook.com hosts: www, web, m, and the bare apex). It never deletes posts or modifies Facebook data.
+Tathabbut applies its deterministic rules inside the browser. The local Release Candidate has no Backend dependency, remote classification setting, or content-transmission path. It never deletes posts, reports people, or modifies Facebook data. Hide an item and reveal it again from the same page.
 
 > **Hide locally. Explain clearly. Restore anytime.**
 
-The Arabic name تثبّت conveys careful verification and avoiding hasty judgment. Respectful criticism is not a violation category. The initial classifier uses narrow, deterministic starter rules; it does not establish truth or intent. Misinformation filtering is not enabled by default because verification needs evidence and provenance.
+The Arabic name تثبّت conveys careful verification and avoiding hasty judgment. Respectful criticism is not a violation category. The rules are narrow starter patterns; they do not establish truth, intent, or broad understanding of Arabic dialects.
 
-## Current status
+## Release Candidate status
 
-The repository contains the initial Chrome Manifest V3 extension, optional FastAPI endpoint, CI tests/build, and project privacy/security documents. This is an early MVP and the Facebook selectors/rules need broader manual and language-aware evaluation before everyday use.
+This is the local-only RC, manifest version **0.1.0**. Automated tests and synthetic browser fixtures do not verify Facebook’s current live DOM. Chrome, Brave, and live Facebook behavior have not been confirmed for this artifact; see [the manual test checklist](docs/MANUAL_TEST.md).
 
-## Get the extension
+## Install the unpacked extension
 
-1. Open the latest successful [GitHub Actions workflow](https://github.com/FekyBaz/Tathabbut/actions/workflows/ci.yml).
-2. Open its run and download the `tathabbut-chrome-extension` artifact.
-3. Extract the ZIP to a folder.
-4. Visit `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and choose the extracted folder.
+1. Build the extension using the instructions below, or extract the shared ZIP to a folder.
+2. Open `chrome://extensions/` in Chrome or `brave://extensions/` in Brave.
+3. Turn on **Developer mode**, click **Load unpacked**, and select the extracted package folder. For a source checkout, select `extension/dist`.
+4. Enable Tathabbut and open its popup to review the current settings.
 
-The artifact is created by CI after tests and package-layout checks pass.
+The extension declares `storage` for preferences and diagnostics and Facebook-only host access for its content script. It does not request optional HTTP/HTTPS origins or install a background service worker.
 
-## Run locally
+## Local behavior and privacy
 
-Extension:
+- Classification is performed locally in the extension.
+- No Backend setup is needed or bundled.
+- There is no remote classification API configuration in this release.
+- The extension does not send extracted comment/post text to a classification service.
+- Settings are stored with Chrome Sync storage and may sync through the user's browser account when sync is enabled. This is preference synchronization, not comment-text transfer.
+- Diagnostics are opt-in metadata stored locally. No analytics or telemetry service is included.
+
+See [privacy](docs/PRIVACY.md), [responsible filtering](docs/RESPONSIBLE_FILTERING.md), and the [threat model](docs/THREAT_MODEL.md).
+
+## Defaults and limitations
+
+Filtering starts enabled, with harassment, hate, threats, and spam selected and a rule-strength threshold of 85%. These values are not calibrated probabilities. Contextual or low-strength signals remain visible for review. Hidden items can be revealed; reveal state lasts only in the current page context and can reset after text or settings changes or a reload.
+
+The extension targets Facebook HTTPS hosts (`facebook.com` and its subdomains). It does not filter private messages, images, video, or content outside supported text units. Facebook may change its DOM at any time. Do not treat synthetic fixture results as live compatibility evidence.
+
+## Build and test from source
+
 ```bash
 cd extension
-npm install
+npm ci
 npm test
+npm run typecheck
 npm run build
+python smoke/lab.py
 ```
 
-API:
-```bash
-cd backend
-python -m venv .venv
-# Windows: .venv\\Scripts\\activate
-# macOS/Linux: source .venv/bin/activate
-pip install -e ".[dev]"
-uvicorn tathabbut_api.main:app --reload
-```
+The build runs the MV3 packaging and local-only artifact checks. The synthetic browser lab does not sign in to Facebook or verify a real feed.
 
-Health check: `http://127.0.0.1:8000/health`.
+## Development-only diagnostics
 
-## Categories in the starter
-- Personal insults / harassment
-- Hateful or dehumanizing attacks
-- Threats of violence
-- Spam
+The popup's opt-in diagnostics show counts, lengths, fingerprints, and reasons, not post text, names, or URLs. For lifecycle troubleshooting only, see the development procedure in [docs/MANUAL_TEST.md](docs/MANUAL_TEST.md).
 
-User controls include enabling/disabling filtering, selecting categories, adjusting confidence threshold, and optionally configuring a self-hosted API URL. Leaving the API blank keeps classification local. Remote calls are routed through the extension service worker; the extension requests optional access to the configured host only after the user saves that URL. HTTPS is required for non-local hosts, and changing or clearing the URL removes the previous host permission.
+## Experimental Backend source
 
-## Privacy and limitations
-Provider keys must stay on the backend, never in extension code. Only a selected text snippet and chosen categories should be sent when remote classification is explicitly configured. The backend starter makes no external model calls.
+The repository retains a separate FastAPI Backend for developer experimentation. It is not required by this Release Candidate, is not included in the extension ZIP, and is not exposed in the Stable extension UI. Do not use it as part of local-only release validation.
 
-Context matters: quotations, satire, reclaimed language, dialect, counterspeech, or reporting abuse can be misread by classifiers. Filtering is reversible and does not report or delete content. See [privacy](docs/PRIVACY.md), [responsible filtering](docs/RESPONSIBLE_FILTERING.md), and [threat model](docs/THREAT_MODEL.md).
+## Project information
 
-## Contributing
-See [CONTRIBUTING.md](CONTRIBUTING.md), the [roadmap](docs/ROADMAP.md), and issue templates. License: MIT.
-
-The project draws inspiration from the general value of careful verification; it is not a religious authority and does not enforce religious rules.
+See [LICENSE](LICENSE) (MIT, as currently applicable). Tathabbut is not a religious authority and does not enforce religious rules.

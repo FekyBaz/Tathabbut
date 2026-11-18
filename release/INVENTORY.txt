@@ -1,0 +1,17 @@
+Tathabbut local-only Release Candidate 1 package inventory
+Archive: tathabbut-local-rc1-0.1.0.zip
+SHA-256: 98fcf8830b1b9b0b824743c63eb0501f994e04a6b45a47627c09ffbd86bbf171
+
+content.css  1228 bytes
+content.js  33416 bytes
+docs/MANUAL_TEST.md  2598 bytes
+docs/PRIVACY.md  2606 bytes
+docs/RESPONSIBLE_FILTERING.md  1341 bytes
+docs/THREAT_MODEL.md  1693 bytes
+LICENSE  1100 bytes
+manifest.json  595 bytes
+popup.html  3346 bytes
+popup.js  14268 bytes
+README.md  4010 bytes
+
+Build label: rc1; manifest version remains 0.1.0.

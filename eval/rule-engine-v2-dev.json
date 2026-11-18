@@ -1,0 +1,42 @@
+{
+  "version": "2.0.0",
+  "split": "development",
+  "provenance": "Synthetic examples authored for this repository on 2026-10-27; no real-user or scraped text. See ANNOTATION_GUIDELINES.md.",
+  "items": [
+    {"id":"v2d-h-en-p1","primaryCategory":"harassment","lang":"en","status":"clear","text":"You're worthless and nobody wants you here.","expect":["harassment"],"rationale":"Direct second-person personal degradation."},
+    {"id":"v2d-h-en-n1","primaryCategory":"harassment","lang":"en","status":"clear","text":"The explanation is misleading and the code fails on empty input.","expect":[],"rationale":"Criticizes an explanation and code behavior, not a person."},
+    {"id":"v2d-h-ar-p1","primaryCategory":"harassment","lang":"ar","status":"clear","text":"انت حقير ومحدش بيطيقك","expect":["harassment"],"rationale":"Egyptian Arabic direct personal degradation."},
+    {"id":"v2d-h-ar-n1","primaryCategory":"harassment","lang":"ar","status":"clear","text":"الكود ده فاشل في الاختبار ومحتاج تعديل","expect":[],"rationale":"Calls code implementation unsuccessful; no person is attacked."},
+    {"id":"v2d-h-mix-p1","primaryCategory":"harassment","lang":"mixed","status":"clear","text":"يا حمار, your review adds no value.","expect":["harassment"],"rationale":"Direct Arabic insult targets the discussion partner."},
+    {"id":"v2d-h-mix-n1","primaryCategory":"harassment","lang":"mixed","status":"clear","text":"The UI وحش ومحتاج redesign.","expect":[],"rationale":"Negative product feedback without personal abuse."},
+    {"id":"v2d-h-ab-p1","primaryCategory":"harassment","lang":"arabizi","status":"clear","text":"entu ahbal w kalamak malosh lazma","expect":["harassment"],"rationale":"Direct Arabizi personal insult and dismissal."},
+    {"id":"v2d-h-ab-n1","primaryCategory":"harassment","lang":"arabizi","status":"clear","text":"el explanation mesh wad7a w محتاجة examples","expect":[],"rationale":"Criticizes an explanation, not its author."},
+
+    {"id":"v2d-t-en-p1","primaryCategory":"threats","lang":"en","status":"clear","text":"I will shoot you if you come back.","expect":["threats"],"rationale":"Direct conditional intent to inflict physical harm."},
+    {"id":"v2d-t-en-n1","primaryCategory":"threats","lang":"en","status":"clear","text":"I'll kill time at the airport before boarding.","expect":[],"rationale":"Common idiom without a human target or harm intent."},
+    {"id":"v2d-t-ar-p1","primaryCategory":"threats","lang":"ar","status":"clear","text":"هذبحك لو قربت مني","expect":["threats"],"rationale":"Direct Egyptian Arabic threat of physical harm."},
+    {"id":"v2d-t-ar-n1","primaryCategory":"threats","lang":"ar","status":"clear","text":"مش هقتلك، أنا بس عايز أتكلم","expect":[],"rationale":"Explicitly denies intent to kill and requests discussion."},
+    {"id":"v2d-t-mix-p1","primaryCategory":"threats","lang":"mixed","status":"clear","text":"I'll hurt you لو رجعت تاني","expect":["threats"],"rationale":"English direct threat with an Arabic condition."},
+    {"id":"v2d-t-mix-n1","primaryCategory":"threats","lang":"mixed","status":"clear","text":"We need to kill the process, مش الشخص.","expect":[],"rationale":"Technical idiom explicitly distinguishes a process from a person."},
+    {"id":"v2d-t-ab-p1","primaryCategory":"threats","lang":"arabizi","status":"clear","text":"ha2telek law terg3 hena","expect":["threats"],"rationale":"Arabizi direct future threat with a condition."},
+    {"id":"v2d-t-ab-n1","primaryCategory":"threats","lang":"arabizi","status":"clear","text":"ana mesh ha2telek, 3ayez netkalem","expect":[],"rationale":"Arabizi negation explicitly denies a threat."},
+
+    {"id":"v2d-hate-en-p1","primaryCategory":"hate","lang":"en","status":"clear","text":"Muslims are vermin and should be driven out.","expect":["hate"],"rationale":"Dehumanizes and advocates exclusion of a religious identity group."},
+    {"id":"v2d-hate-en-n1","primaryCategory":"hate","lang":"en","status":"clear","text":"I oppose this church's policy on public school funding.","expect":[],"rationale":"Criticizes an institution policy, not people based on identity."},
+    {"id":"v2d-hate-ar-p1","primaryCategory":"hate","lang":"ar","status":"clear","text":"كل المسيحيين حشرات ولازم يطردوهم","expect":["hate"],"rationale":"Dehumanizes and advocates excluding a religious identity group."},
+    {"id":"v2d-hate-ar-n1","primaryCategory":"hate","lang":"ar","status":"clear","text":"أنا معترض على قرار المؤسسة الدينية ده","expect":[],"rationale":"Criticizes an institution's decision, not its members as a group."},
+    {"id":"v2d-hate-mix-p1","primaryCategory":"hate","lang":"mixed","status":"clear","text":"كل العرب vermin ومش لازم يعيشوا هنا","expect":["hate"],"rationale":"Dehumanizes an ethnic identity group and calls for exclusion."},
+    {"id":"v2d-hate-mix-n1","primaryCategory":"hate","lang":"mixed","status":"clear","text":"I disagree with the church's policy وعايزين نغيرها.","expect":[],"rationale":"Criticizes a policy, not an identity group."},
+    {"id":"v2d-hate-ab-p1","primaryCategory":"hate","lang":"arabizi","status":"clear","text":"kol el masi7yeen 7asharat w lazm yet6erdo","expect":["hate"],"rationale":"Arabizi dehumanization and exclusion targeting a religious group."},
+    {"id":"v2d-hate-ab-n1","primaryCategory":"hate","lang":"arabizi","status":"clear","text":"ana ba5alef ra2y el jama3a fel policy","expect":[],"rationale":"Disagrees with a group's policy position without attacking identity."},
+
+    {"id":"v2d-s-en-p1","primaryCategory":"spam","lang":"en","status":"clear","text":"Claim your prize now and DM me to claim it.","expect":["spam"],"rationale":"Unsolicited prize-bait solicitation."},
+    {"id":"v2d-s-en-n1","primaryCategory":"spam","lang":"en","status":"clear","text":"DM me the meeting notes when you have time.","expect":[],"rationale":"Ordinary one-to-one request without a scam or repetitive solicitation."},
+    {"id":"v2d-s-ar-p1","primaryCategory":"spam","lang":"ar","status":"clear","text":"ابعتلي خاص عشان تكسب الجائزة حالا","expect":["spam"],"rationale":"Prize scam solicitation in Egyptian Arabic."},
+    {"id":"v2d-s-ar-n1","primaryCategory":"spam","lang":"ar","status":"clear","text":"ابعتلي الملف على الخاص لما تفضى","expect":[],"rationale":"Ordinary request to send a file privately."},
+    {"id":"v2d-s-mix-p1","primaryCategory":"spam","lang":"mixed","status":"clear","text":"مبروك كسبت prize ابعتلي خاص عشان تستلم","expect":["spam"],"rationale":"Mixed-language prize bait asks the recipient to claim a reward."},
+    {"id":"v2d-s-mix-n1","primaryCategory":"spam","lang":"mixed","status":"clear","text":"Here is one link للمقال اللي اتكلمنا عنه.","expect":[],"rationale":"Single contextual link to a discussed article."},
+    {"id":"v2d-s-ab-p1","primaryCategory":"spam","lang":"arabizi","status":"clear","text":"mabrook kasabt el prize, eb3atly private 3ashan testalem","expect":["spam"],"rationale":"Arabizi prize scam with private-message claim instruction."},
+    {"id":"v2d-s-ab-n1","primaryCategory":"spam","lang":"arabizi","status":"clear","text":"eb3atly el meeting notes lama tefda","expect":[],"rationale":"Ordinary request for meeting notes, no reward or repeated solicitation."}
+  ]
+}

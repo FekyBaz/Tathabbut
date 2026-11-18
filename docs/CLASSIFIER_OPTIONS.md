@@ -10,10 +10,12 @@ The shipped default remains the deterministic local rules described in
 - Size/memory: a few KB of patterns; no model weights, no extra process.
 - Privacy: nothing leaves the browser in local-only mode.
 - Reliability: deterministic; identical input always yields identical output.
-- Arabic: a handful of explicit patterns plus normalization (diacritics,
-  tatweel, alef variants, alef-maqsura). Not dialect understanding.
-- Limits (measured): quotation/educational mentions false-positive;
-  paraphrased abuse false-negatives; no intent or truth judgments.
+- Arabic: explicit patterns plus normalization (diacritics, tatweel, alef
+  variants, alef-maqsura). Improved on a labeled corpus, but not broad dialect
+  understanding.
+- Limits (measured): a narrow reporting/quotation guard covers common cues;
+  ambiguous or unmarked quotation can still false-positive, and paraphrased
+  abuse false-negatives remain. No intent or truth judgments.
 
 ## Option A: optional self-hosted API (already scaffolded, not required)
 
