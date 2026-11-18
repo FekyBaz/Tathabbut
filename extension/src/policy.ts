@@ -225,7 +225,11 @@ const patterns: Record<Category, RegExp[]> = {
     // narrowly for the second-person form. Insult tokens are a closed set of
     // attested transliterations already reviewed in Arabic-script rules.
     /(?<!\b(?:mish|mesh|msh)\s+)(?<=^|[\s،,.!?؟])(?:enta|inti|antu|entu)\s+(?:7mar|7mara|fashel|fashla|ghaby|ghabi|ghabia|ahbal)\b/i,
-    /(?<!\b(?:mish|mesh|msh)\s+)(?<=^|[\s،,.!?؟])(?:howa|heya)\s+(?:7mar|7mara|fashel|fashla|ghaby|ghabia|ahbal)\b/i
+    /(?<!\b(?:mish|mesh|msh)\s+)(?<=^|[\s،,.!?؟])(?:howa|heya)\s+(?:7mar|7mara|fashel|fashla|ghaby|ghabia|ahbal)\b/i,
+    // V13: plural and past-tense personal abuse with the V8 reviewed
+    // vocabulary. Appended to preserve IDs. Optional plural s is morphology,
+    // not a new insult; negation/attribution are handled structurally.
+    /\b(?:they(?:'re| are)|he\s+was|she\s+was|they\s+were)\s+(?:(?:such\s+(?:a|an)\s+)|(?:(?:a|an)\s+)?(?:complete|total)\s+|(?:(?:a|an)\s+)?)?(?:idiot|idiots|moron|morons|loser|losers|stupid|dumb|worthless|pathetic|clown|clowns|asshole|assholes|bastard|bastards|piece of (?:shit|trash)|waste of space)\b/i
   ],
   hate: [
     /\b(?:all|every) (?:members of )?(?:group) are (?:vermin|subhuman)\b/i

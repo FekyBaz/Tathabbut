@@ -554,3 +554,36 @@ describe("V12 Arabizi personal-abuse grammar", () => {
     expect(classifyLocally("howa fashel.").matches.map((match) => match.ruleId)).toContain("harassment.27");
   });
 });
+
+describe("V13 plural and past-tense personal abuse", () => {
+  it.each([
+    "They're idiots.",
+    "they are pathetic",
+    "He was a moron.",
+    "She was worthless.",
+    "They were clowns.",
+    "He was such a loser."
+  ])("hides plural/past-tense personal abuse: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "They're engineers.",
+    "He was the manager.",
+    "They're designing the new API.",
+    "Their code is pathetic.",
+    "They're not idiots.",
+    "He wasn't stupid.",
+    "She said they're idiots.",
+    "Their ideas are stupid.",
+    "They weren't clowns."
+  ])("keeps facts, negation, reports, and object criticism visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+
+  it("assigns the appended plural/past rule its verified ID", () => {
+    expect(classifyLocally("They're idiots.").matches.map((match) => match.ruleId)).toContain("harassment.28");
+  });
+});
