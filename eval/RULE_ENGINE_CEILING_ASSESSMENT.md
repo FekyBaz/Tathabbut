@@ -57,6 +57,7 @@
 
 ## 6. حالة الشجرة عند كتابة هذا التقييم
 
-- HEAD قبل دورة V14: `d078e23` (تقرير V13)، فرع `fix/dom-reveal-lifecycle`، متزامن مع origin.
-- 523 اختبار extension + 33 backend، tsc/build/verify-dist خضراء.
+- HEAD: `6a24f95` (V14 cycle report) + إصلاح harness المختبر، فرع `fix/dom-reveal-lifecycle`، متزامن مع origin.
+- 523 اختبار extension + 33 backend، tsc/build/verify-dist خضراء، ومختبر fixtures **103/103** بعد إصلاح تسريب الإعدادات فيه (انظر [`smoke/lab.py`](../extension/smoke/lab.py): سيناريو `local-category-off` كان يعطّل كل الفئات ولا يعيدها قبل مراحل dynamic/notice؛ أُضيفت استعادة للإعدادات الافتراضية). الفشل الثلاثة كان موجودًا في الـ baseline `7303cbf` أيضًا — أي أنه عيب harness سابق، ليس انحدارًا من V8–V14.
+- الشجرة الجارية نظيفة باستثناء هذا الإصلاح التوثيقي.
 - الشجرة نظيفة قبل بدء V13؛ لا أعمال غير مُرحّلة.
