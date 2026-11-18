@@ -520,3 +520,37 @@ describe("V11 bounded repeated-letter normalization and idot alias", () => {
     expect(classifyLocally("You're an idot.").matches.map((match) => match.ruleId)).toContain("harassment.25");
   });
 });
+
+describe("V12 Arabizi personal-abuse grammar", () => {
+  it.each([
+    "enta 7mar, khalas.",
+    "inti ghabia w mesh betefhami",
+    "enta fashel fel shoghl",
+    "howa fashel, matla3sh out.",
+    "enta ahbal يا حمار",
+    "heya 7mara w maskhara."
+  ])("hides reviewed Arabizi insults with personal targets: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "mish enta 7mar, ana bamzah.",
+    "howa 2al enta 7mar, bas ana mesh.",
+    "el project fashel w moshkel.",
+    "ana 7mar, ana asfal.",
+    "howa engineer w heya doctor.",
+    "el 7mar fi el mazra3a.",
+    "mesh inti ghabia, ana 3ayez atfahm.",
+    "heya 2alet howa 7mar.",
+    "The design is stupid."
+  ])("keeps negation, reports, objects, self-description, and literal uses visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+
+  it("assigns the appended Arabizi rules their verified IDs", () => {
+    expect(classifyLocally("enta 7mar.").matches.map((match) => match.ruleId)).toContain("harassment.26");
+    expect(classifyLocally("howa fashel.").matches.map((match) => match.ruleId)).toContain("harassment.27");
+  });
+});

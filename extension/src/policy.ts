@@ -219,7 +219,13 @@ const patterns: Record<Category, RegExp[]> = {
     /(?:^|[\s،,.!?؟])(?:و)?(?:هو|هي)\s+(?:غبي[هة]?|اهبل|هبل[هة]?|حمار|فاشل[هة]?|تافه[هة]?|حقير[هة]?|جاهل[هة]?|كلب[هة]?|حيوان[هة]?|بهيم[هة]?|قذر[هة]?|وسخ[هة]?|زبال[هة]?)(?=$|[\s،,.!?؟])/u,
     // V11: one reviewed omission typo of an attested insult. The grammatical
     // target stays required; no general fuzzy/edit-distance matching is added.
-    /\b(?:you(?:'re| are)|he(?:'s| is)|she(?:'s| is))\s+(?:(?:a|an)\s+)?idot\b/i
+    /\b(?:you(?:'re| are)|he(?:'s| is)|she(?:'s| is))\s+(?:(?:a|an)\s+)?idot\b/i,
+    // V12: reviewed Arabizi insults with personal pronoun targets. Boundaries
+    // are lookbehinds so matching starts at the pronoun; negation is excluded
+    // narrowly for the second-person form. Insult tokens are a closed set of
+    // attested transliterations already reviewed in Arabic-script rules.
+    /(?<!\b(?:mish|mesh|msh)\s+)(?<=^|[\s،,.!?؟])(?:enta|inti|antu|entu)\s+(?:7mar|7mara|fashel|fashla|ghaby|ghabi|ghabia|ahbal)\b/i,
+    /(?<!\b(?:mish|mesh|msh)\s+)(?<=^|[\s،,.!?؟])(?:howa|heya)\s+(?:7mar|7mara|fashel|fashla|ghaby|ghabia|ahbal)\b/i
   ],
   hate: [
     /\b(?:all|every) (?:members of )?(?:group) are (?:vermin|subhuman)\b/i
