@@ -73,6 +73,10 @@ export function normalizeForRules(text: string): string {
     .replace(/[\u2018\u2019\u02BC`´]/g, "'")
     .replace(/[أإآٱ]/g, "ا")
     .replace(/ى/g, "ي")
+    // V11: collapse stretches of 3+ identical letters to one, recovering
+    // reviewed vocabulary from stretched spellings (idiooot, غبييي) while
+    // leaving ordinary doubled letters (all, see, too, coffee) intact.
+    .replace(/(\p{L})\1{2,}/giu, "$1")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 4000);
@@ -212,7 +216,10 @@ const patterns: Record<Category, RegExp[]> = {
     // pronoun directly (intensifiers allowed), so object/idea criticism,
     // possessive subjects, and negation stay protected.
     /\b(?:he(?:'s| is)|she(?:'s| is))\s+(?:(?:such\s+(?:a|an)\s+)|(?:(?:a|an)\s+)?(?:complete|total)\s+|(?:(?:a|an)\s+)?)?(?:idiot|moron|loser|stupid|dumb|worthless|pathetic|clown|asshole|bastard|piece of (?:shit|trash)|waste of space)\b/i,
-    /(?:^|[\s،,.!?؟])(?:و)?(?:هو|هي)\s+(?:غبي[هة]?|اهبل|هبل[هة]?|حمار|فاشل[هة]?|تافه[هة]?|حقير[هة]?|جاهل[هة]?|كلب[هة]?|حيوان[هة]?|بهيم[هة]?|قذر[هة]?|وسخ[هة]?|زبال[هة]?)(?=$|[\s،,.!?؟])/u
+    /(?:^|[\s،,.!?؟])(?:و)?(?:هو|هي)\s+(?:غبي[هة]?|اهبل|هبل[هة]?|حمار|فاشل[هة]?|تافه[هة]?|حقير[هة]?|جاهل[هة]?|كلب[هة]?|حيوان[هة]?|بهيم[هة]?|قذر[هة]?|وسخ[هة]?|زبال[هة]?)(?=$|[\s،,.!?؟])/u,
+    // V11: one reviewed omission typo of an attested insult. The grammatical
+    // target stays required; no general fuzzy/edit-distance matching is added.
+    /\b(?:you(?:'re| are)|he(?:'s| is)|she(?:'s| is))\s+(?:(?:a|an)\s+)?idot\b/i
   ],
   hate: [
     /\b(?:all|every) (?:members of )?(?:group) are (?:vermin|subhuman)\b/i

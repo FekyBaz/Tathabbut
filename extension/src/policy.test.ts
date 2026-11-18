@@ -481,3 +481,42 @@ describe("V10 spam co-occurrence with expanded private-contact cues", () => {
     expect(classifyLocally("You won a prize! DM me in private to claim it.").matches.map((match) => match.ruleId)).toContain("spam.6");
   });
 });
+
+describe("V11 bounded repeated-letter normalization and idot alias", () => {
+  it.each([
+    "You are an idiooot!!!",
+    "You're pathhhhetic.",
+    "He's dummmb.",
+    "انت غبييي",
+    "وهو اهبللل",
+    "You're an idot."
+  ])("hides a stretched or attested-misspelled insult: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("harassment");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "This is soooo beautiful.",
+    "I loooove this update.",
+    "Yessss, let's do it.",
+    "We are all here.",
+    "You're an idol in my eyes.",
+    "The idot report is on the desk.",
+    "هو فاهممم كل حاجة",
+    "ههههه، قوليلي ايه السبب."
+  ])("keeps benign stretches, doubled letters, and untargeted aliases visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("harassment");
+  });
+
+  it("collapses only runs of three or more identical letters", () => {
+    expect(normalizeForRules("idiooot")).toBe("idiot");
+    expect(normalizeForRules("غبييي")).toBe("غبي");
+    expect(normalizeForRules("all")).toBe("all");
+    expect(normalizeForRules("coffee and success")).toBe("coffee and success");
+  });
+
+  it("assigns the reviewed idot alias its verified ID", () => {
+    expect(classifyLocally("You're an idot.").matches.map((match) => match.ruleId)).toContain("harassment.25");
+  });
+});
