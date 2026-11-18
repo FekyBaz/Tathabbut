@@ -50,17 +50,17 @@ export const DEFAULT_SETTINGS: UserSettings = {
 // routing values, not calibrated probabilities. Specificity controls whether
 // evidence may auto-hide or must abstain to REVIEW.
 const CONTEXTUAL_RULE_IDS: ReadonlySet<string> = new Set([
-  "harassment.14", // sarcasm/mockery without an explicit addressee
-  "hate.1",        // placeholder word "group" does not identify an identity
-  "spam.1",        // a generic phrase can also occur in legitimate promotion
-  "spam.3"         // a prize phrase alone lacks solicitation/deception context
+  "harassment.ambiguous-mockery", // sarcasm/mockery without an explicit addressee
+  "hate.placeholder-group",       // placeholder word "group" does not identify an identity
+  "spam.generic-promotion",       // a generic phrase can also occur in legitimate promotion
+  "spam.prize-phrase-only"        // a prize phrase alone lacks solicitation/deception context
 ]);
 
 const CONTEXTUAL_RULE_REASONS: Readonly<Record<string, string>> = {
-  "harassment.14": "Mockery phrase is context-dependent and has no explicit target.",
-  "hate.1": "The literal group placeholder does not identify a protected group.",
-  "spam.1": "Generic promotion wording lacks enough evidence for automatic spam hiding.",
-  "spam.3": "Prize wording alone does not establish deceptive or unsolicited solicitation."
+  "harassment.ambiguous-mockery": "Mockery phrase is context-dependent and has no explicit target.",
+  "hate.placeholder-group": "The literal group placeholder does not identify a protected group.",
+  "spam.generic-promotion": "Generic promotion wording lacks enough evidence for automatic spam hiding.",
+  "spam.prize-phrase-only": "Prize wording alone does not establish deceptive or unsolicited solicitation."
 };
 
 export function normalizeForRules(text: string): string {
@@ -265,6 +265,66 @@ const patterns: Record<Category, RegExp[]> = {
   ]
 };
 
+// Stable semantic rule IDs aligned by index with `patterns` above. Unlike
+// position-derived IDs, inserting or reordering a pattern cannot silently
+// change an ID that diagnostics, evaluations, or reports already reference.
+// The legacy numeric IDs are documented in eval/RULE_ENGINE_SEMANTIC_IDS.md.
+export const RULE_IDS: Readonly<Record<Category, readonly string[]>> = {
+  harassment: [
+    "harassment.direct-en-insult",
+    "harassment.en-fraud-joke",
+    "harassment.en-joke-of-person",
+    "harassment.ar-fraud-joke-faker",
+    "harassment.en-silencing-phrase",
+    "harassment.en-fuck-screw-you",
+    "harassment.ar-second-person-basic-insult",
+    "harassment.ar-vocative-basic-insult",
+    "harassment.ar-second-person-insult-list",
+    "harassment.ar-vocative-insult-list",
+    "harassment.ar-standalone-insult",
+    "harassment.ar-shut-up",
+    "harassment.ar-insult-dismissal",
+    "harassment.ambiguous-mockery",
+    "harassment.ar-belittling-phrase",
+    "harassment.arabizi-legacy-ghaby",
+    "harassment.arabizi-legacy-faker",
+    "harassment.mixed-second-person-ahbal",
+    "harassment.arabizi-vocative-7mar",
+    "harassment.arabizi-vocative-ahbal",
+    "harassment.ar-vocative-3alaq",
+    "harassment.ar-second-person-3alaq",
+    "harassment.en-third-person-insult",
+    "harassment.ar-third-person-insult",
+    "harassment.en-idot-alias",
+    "harassment.arabizi-second-person-insult",
+    "harassment.arabizi-third-person-insult",
+    "harassment.en-plural-past-insult"
+  ],
+  hate: ["hate.placeholder-group"],
+  threats: [
+    "threats.en-future-harm",
+    "threats.en-body-part-injury",
+    "threats.en-self-harm-encouragement",
+    "threats.ar-future-harm-second",
+    "threats.ar-future-harm-third",
+    "threats.arabizi-future-harm",
+    "threats.en-additional-injury",
+    "threats.ar-choke-injury"
+  ],
+  spam: [
+    "spam.generic-promotion",
+    "spam.repeated-links",
+    "spam.prize-phrase-only",
+    "spam.mixed-prize-private-claim",
+    "spam.arabizi-prize-claim",
+    "spam.expanded-private-contact-triad"
+  ]
+};
+
+export function patternCount(category: Category): number {
+  return patterns[category].length;
+}
+
 export function classifyLocally(text: string): Classification {
   const normalized = normalizeForRules(text);
   const ruleText = classificationText(normalized);
@@ -287,12 +347,12 @@ export function classifyLocally(text: string): Classification {
     for (let index = 0; index < patterns[category].length; index += 1) {
       const pattern = patterns[category][index];
       if (!pattern.test(matchText)) continue;
-      // IDs follow pattern order within each category; append new patterns to
-      // preserve existing IDs and keep them useful in diagnostics/evaluation.
-      const ruleId = `${category}.${index + 1}`;
-      const hasExplicitArabicAddressee = category === "harassment" && ruleId === "harassment.14" &&
+      // IDs are semantic and stable; append-only order is no longer required
+      // for ID integrity, but insertion changes which rule fires on overlap.
+      const ruleId = RULE_IDS[category][index] ?? `${category}.${index + 1}`;
+      const hasExplicitArabicAddressee = category === "harassment" && ruleId === "harassment.ambiguous-mockery" &&
         /(?:^|[\s،,.!?؟])(?:انت|انتي|انتوا|انتم)\s+/u.test(matchText);
-      const hasPrizeAndPrivateSolicitation = category === "spam" && ruleId === "spam.1" &&
+      const hasPrizeAndPrivateSolicitation = category === "spam" && ruleId === "spam.generic-promotion" &&
         /\b(?:prize|reward|won)\b|جائزة|الجائزة|مبروك\s+كسبت/iu.test(matchText) &&
         /\b(?:dm|message)\s+me\b|ابعتلي\s+(?:خاص|رسالة\s+خاصة)/iu.test(matchText);
       const specificity: RuleSpecificity = CONTEXTUAL_RULE_IDS.has(ruleId) &&

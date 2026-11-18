@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, classifyLocally, decidePolicy, normalizeForRules, shouldHide, type Category, type Classification } from "./policy";
+import { CATEGORIES, DEFAULT_SETTINGS, RULE_IDS, classifyLocally, decidePolicy, normalizeForRules, patternCount, shouldHide, type Category, type Classification } from "./policy";
 
 function localScore(category: Category, score: number): Classification {
   return {
@@ -98,7 +98,7 @@ describe("classifyLocally", () => {
     const result = classifyLocally("You are an idiot");
     expect(result.matches).toContainEqual({
       category: "harassment",
-      ruleId: "harassment.1",
+      ruleId: "harassment.direct-en-insult",
       reason: "Targeted personal abuse phrase matched.",
       specificity: "high"
     });
@@ -440,10 +440,10 @@ describe("V9 additional injury constructions", () => {
   });
 
   it("keeps existing threat rule IDs stable and assigns the new appended IDs", () => {
-    expect(classifyLocally("I'll break your jaw.").matches.map((match) => match.ruleId)).toContain("threats.2");
-    expect(classifyLocally("هقتلك.").matches.map((match) => match.ruleId)).toContain("threats.4");
-    expect(classifyLocally("I'll choke you.").matches.map((match) => match.ruleId)).toContain("threats.7");
-    expect(classifyLocally("هخنقك.").matches.map((match) => match.ruleId)).toContain("threats.8");
+    expect(classifyLocally("I'll break your jaw.").matches.map((match) => match.ruleId)).toContain("threats.en-body-part-injury");
+    expect(classifyLocally("هقتلك.").matches.map((match) => match.ruleId)).toContain("threats.ar-future-harm-second");
+    expect(classifyLocally("I'll choke you.").matches.map((match) => match.ruleId)).toContain("threats.en-additional-injury");
+    expect(classifyLocally("هخنقك.").matches.map((match) => match.ruleId)).toContain("threats.ar-choke-injury");
   });
 });
 
@@ -478,7 +478,7 @@ describe("V10 spam co-occurrence with expanded private-contact cues", () => {
   });
 
   it("assigns the appended spam rule its verified ID", () => {
-    expect(classifyLocally("You won a prize! DM me in private to claim it.").matches.map((match) => match.ruleId)).toContain("spam.6");
+    expect(classifyLocally("You won a prize! DM me in private to claim it.").matches.map((match) => match.ruleId)).toContain("spam.expanded-private-contact-triad");
   });
 });
 
@@ -517,7 +517,7 @@ describe("V11 bounded repeated-letter normalization and idot alias", () => {
   });
 
   it("assigns the reviewed idot alias its verified ID", () => {
-    expect(classifyLocally("You're an idot.").matches.map((match) => match.ruleId)).toContain("harassment.25");
+    expect(classifyLocally("You're an idot.").matches.map((match) => match.ruleId)).toContain("harassment.en-idot-alias");
   });
 });
 
@@ -550,8 +550,8 @@ describe("V12 Arabizi personal-abuse grammar", () => {
   });
 
   it("assigns the appended Arabizi rules their verified IDs", () => {
-    expect(classifyLocally("enta 7mar.").matches.map((match) => match.ruleId)).toContain("harassment.26");
-    expect(classifyLocally("howa fashel.").matches.map((match) => match.ruleId)).toContain("harassment.27");
+    expect(classifyLocally("enta 7mar.").matches.map((match) => match.ruleId)).toContain("harassment.arabizi-second-person-insult");
+    expect(classifyLocally("howa fashel.").matches.map((match) => match.ruleId)).toContain("harassment.arabizi-third-person-insult");
   });
 });
 
@@ -584,7 +584,7 @@ describe("V13 plural and past-tense personal abuse", () => {
   });
 
   it("assigns the appended plural/past rule its verified ID", () => {
-    expect(classifyLocally("They're idiots.").matches.map((match) => match.ruleId)).toContain("harassment.28");
+    expect(classifyLocally("They're idiots.").matches.map((match) => match.ruleId)).toContain("harassment.en-plural-past-insult");
   });
 });
 
@@ -613,7 +613,18 @@ describe("V14 negation guard for legacy Arabizi patterns", () => {
 
   it("keeps the guarded legacy rule IDs unchanged", () => {
     const ids = classifyLocally("enta ghaby").matches.map((match) => match.ruleId);
-    expect(ids).toContain("harassment.16");
-    expect(classifyLocally("enta faker").matches.map((match) => match.ruleId)).toContain("harassment.17");
+    expect(ids).toContain("harassment.arabizi-legacy-ghaby");
+    expect(classifyLocally("enta faker").matches.map((match) => match.ruleId)).toContain("harassment.arabizi-legacy-faker");
+  });
+});
+
+describe("semantic rule IDs", () => {
+  it("has exactly one unique, category-prefixed ID per pattern", () => {
+    for (const category of CATEGORIES) {
+      const ids = RULE_IDS[category];
+      expect(ids).toHaveLength(patternCount(category));
+      expect(new Set(ids).size).toBe(ids.length);
+      for (const id of ids) expect(id.startsWith(`${category}.`)).toBe(true);
+    }
   });
 });

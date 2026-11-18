@@ -21,13 +21,13 @@ describe("V7 local decision baseline before remote-path removal", () => {
     });
     expect(localOutput("You are an idiot")).toEqual({
       labels: [{ category: "harassment", score: 0.86 }],
-      matches: [{ category: "harassment", ruleId: "harassment.1", specificity: "high", reason: "Targeted personal abuse phrase matched." }],
-      action: "HIDE", reason: "rule-match", categories: ["harassment"], ruleIds: ["harassment.1"]
+      matches: [{ category: "harassment", ruleId: "harassment.direct-en-insult", specificity: "high", reason: "Targeted personal abuse phrase matched." }],
+      action: "HIDE", reason: "rule-match", categories: ["harassment"], ruleIds: ["harassment.direct-en-insult"]
     });
     expect(localOutput("يا سلام على الفهم")).toEqual({
       labels: [{ category: "harassment", score: 0.86 }],
-      matches: [{ category: "harassment", ruleId: "harassment.14", specificity: "contextual", reason: "Mockery phrase is context-dependent and has no explicit target." }],
-      action: "REVIEW", reason: "contextual-rule-match", categories: ["harassment"], ruleIds: ["harassment.14"]
+      matches: [{ category: "harassment", ruleId: "harassment.ambiguous-mockery", specificity: "contextual", reason: "Mockery phrase is context-dependent and has no explicit target." }],
+      action: "REVIEW", reason: "contextual-rule-match", categories: ["harassment"], ruleIds: ["harassment.ambiguous-mockery"]
     });
   });
 
@@ -35,14 +35,14 @@ describe("V7 local decision baseline before remote-path removal", () => {
     expect(localOutput("You are an idiot", 0.85).action).toBe("HIDE");
     expect(localOutput("You are an idiot", 0.86).action).toBe("HIDE");
     expect(localOutput("You are an idiot", 0.87)).toMatchObject({
-      action: "REVIEW", reason: "below-threshold", categories: ["harassment"], ruleIds: ["harassment.1"]
+      action: "REVIEW", reason: "below-threshold", categories: ["harassment"], ruleIds: ["harassment.direct-en-insult"]
     });
   });
 
   it("preserves multi-category high-specificity evidence", () => {
     expect(localOutput("You are an idiot, and I'll break your jaw.")).toMatchObject({
       labels: [{ category: "harassment", score: 0.86 }, { category: "threats", score: 0.9 }],
-      action: "HIDE", categories: ["harassment", "threats"], ruleIds: ["harassment.1", "threats.2"]
+      action: "HIDE", categories: ["harassment", "threats"], ruleIds: ["harassment.direct-en-insult", "threats.en-body-part-injury"]
     });
   });
 
