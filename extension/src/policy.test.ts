@@ -446,3 +446,38 @@ describe("V9 additional injury constructions", () => {
     expect(classifyLocally("هخنقك.").matches.map((match) => match.ruleId)).toContain("threats.8");
   });
 });
+
+describe("V10 spam co-occurrence with expanded private-contact cues", () => {
+  it.each([
+    "You won a free prize! DM me in private to claim it.",
+    "مبروك كسبت الجائزة، كلمني على الخاص عشان تستلمها.",
+    "Congratulations, you won a reward! Message me privately to collect.",
+    "You have won a prize, dm me in private to claim your reward.",
+    "مبروك كسبت جائزة، راسلني على الخاص عشان تستلم الفلوس."
+  ])("hides the reward + private contact + claim triad: %s", (text) => {
+    const result = classifyLocally(text);
+    expect(result.labels.map((label) => label.category)).toContain("spam");
+    expect(shouldHide(result, { ...DEFAULT_SETTINGS, threshold: 0.85 })).toBe(true);
+  });
+
+  it.each([
+    "DM me the room number before the lecture.",
+    "I won a prize at the school fair and collected it yesterday.",
+    "I won a prize at the raffle; message me privately to say hi.",
+    "ابعتلي موقع القاعة على الخاص لو سمحت.",
+    "Congratulations on winning the school prize, collect your certificate from the office.",
+    "He sent me the prize details; I collected them yesterday."
+  ])("keeps logistics, past prizes, and two-of-three cases visible: %s", (text) => {
+    expect(classifyLocally(text).labels.map((label) => label.category)).not.toContain("spam");
+  });
+
+  it("keeps prize-only congratulations at contextual review", () => {
+    const result = classifyLocally("مبروك كسبت الجائزة في سحب المدرسة، كلمني على الخاص عشان نهنئك.");
+    expect(result.labels.map((label) => label.category)).toContain("spam");
+    expect(decidePolicy(result, DEFAULT_SETTINGS).action).toBe("REVIEW");
+  });
+
+  it("assigns the appended spam rule its verified ID", () => {
+    expect(classifyLocally("You won a prize! DM me in private to claim it.").matches.map((match) => match.ruleId)).toContain("spam.6");
+  });
+});

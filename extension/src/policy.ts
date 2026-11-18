@@ -240,7 +240,11 @@ const patterns: Record<Category, RegExp[]> = {
     // and a claim/collection action together to protect ordinary messages.
     /(?=.*(?:\b(?:prize|reward|won|claim)\b|جائزة|الجائزة|مبروك\s+كسبت))(?=.*(?:ابعتلي\s+(?:خاص|رسالة\s+خاصة)|\bdm\s+me\s+privately\b))(?=.*(?:تستلم|استلام|claim|collect))/iu,
     // Narrow Arabizi prize claim phrase, with all solicitation parts required.
-    /\b(?:(?:mabrook|mabrouk)\s+kasabt|ent[aiu]\s+kasabt(?:y)?)\b(?=.*\b(?:prize|reward|flos|bonus)\b)(?=.*\b(?:eb3atly|eb3atli)\b|ابعتلي\s+خاص|ابعتي\s+خاص)(?=.*\b(?:private|dm)\b|خاص)(?=.*\b(?:testalem\w*|claim|collect)\b|تستلم\w*)/i
+    /\b(?:(?:mabrook|mabrouk)\s+kasabt|ent[aiu]\s+kasabt(?:y)?)\b(?=.*\b(?:prize|reward|flos|bonus)\b)(?=.*\b(?:eb3atly|eb3atli)\b|ابعتلي\s+خاص|ابعتي\s+خاص)(?=.*\b(?:private|dm)\b|خاص)(?=.*\b(?:testalem\w*|claim|collect)\b|تستلم\w*)/i,
+    // V10: the same reward + private contact + claim triad as spam.4, with
+    // attested alternative private-contact phrasing. Appended to preserve IDs.
+    // claim/collect are word-bounded so past-tense "collected" is not a claim.
+    /(?=.*(?:\b(?:prize|reward|won|claim)\b|جائزة|الجائزة|مبروك\s+كسبت))(?=.*(?:ابعتلي\s+(?:خاص|رسالة\s+خاصة)|كلمني\s+عل[ىي]\s+الخاص|راسلني\s+عل[ىي]\s+الخاص|بعتلي\s+عل[ىي]\s+الخاص|\bdm\s+me\s+(?:privately|in\s+private)\b|\bmessage\s+me\s+privately\b))(?=.*(?:تستلم|استلام|\bclaim\b|\bcollect\b))/iu
   ]
 };
 
